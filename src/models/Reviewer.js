@@ -19,18 +19,7 @@ const reviewerSchema = new mongoose.Schema(
       },
     ],
   
-    clientsDocuments: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "client_documents",
-        },
-      ],
-    taxReturnDocuments: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "tax_return_documents",
-        },
-      ],
+   
   },
   { timestamps: true }
 );

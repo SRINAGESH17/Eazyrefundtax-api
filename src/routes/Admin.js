@@ -1,5 +1,5 @@
 const express = require("express");
-const { createEmployee } = require("../controllers/Employee");
+const { createEmployee, fetchEmployees, fetchEmployeeById, updateEmployee } = require("../controllers/Employee");
 const upload = require("../middlewares/upload");
 const { verifyAdmin } = require("../middlewares/Auth");
 const { createSubAdmin } = require("../controllers/SubAdmin");
@@ -9,9 +9,15 @@ const upload1 = multer({ dest: 'uploads/' });
 const route = express.Router();
 
 
-
+/**------------------------------------employee--------------------------------------- */
 
 route.post('/employee/create',verifyAdmin, upload.fields([{name:"photo",maxCount:1},{name:"_IDURL",maxCount:1}]), createEmployee);
+route.get('/employee/fetch',verifyAdmin, fetchEmployees);
+route.get('/employee/fetch/:id',verifyAdmin, fetchEmployeeById);
+route.put('/employee/edit/:id',verifyAdmin,upload.fields([{name:"photo",maxCount:1},{name:"_IDURL",maxCount:1}]), updateEmployee);
+
+
+
 route.post('/subadmin/create',verifyAdmin, upload.fields([{name:"photo",maxCount:1}]), createSubAdmin);
 
 /**----------------------------------------------Call------------------------------- */

@@ -13,6 +13,7 @@ const FinalDrafter = require("../models/FinalDrafter");
 const { failedResponse, successResponse } = require("../utils/message");
 const generateId = require("../utils/genRandomId");
 const UserRole = require("../models/UserRole");
+const _= require("lodash")
 
 // Define a Yup schema for request data validation
 const createEmployeeSchema = yup.object().shape({
@@ -186,6 +187,7 @@ exports.createEmployee = async (req, res) => {
 
     savedDesInstance = await newDesInstance.save();
     newEmp.designationRef = savedDesInstance._id;
+    newEmp.userRole = empRole._id;
 
     await newEmp.save();
 
@@ -218,7 +220,7 @@ exports.createEmployee = async (req, res) => {
 
 exports.fetchEmployees = async (req, res) => {
   try {
-    const { searchKey, page = 1, limit = 10, downloadable } = req.query;
+    const { searchKey, page = 1, limit = 10, download } = req.query;
 
     let pipeline = [];
 
@@ -258,15 +260,16 @@ exports.fetchEmployees = async (req, res) => {
     countPipeline.push({ $count: "totalData" });
 
     const [totalDataCount] = await Employee.aggregate(countPipeline);
-    if (!totalData || totalData === 0) {
+    if (!totalDataCount.totalData || totalDataCount.totalData === 0) {
       return res.status(404).json(failedResponse(404, false, "No Data found"));
     }
-
-    // Pagination stage
-    if (!downloadable) {
+    if (Boolean(download?.toLowerCase() !=="true")) {
       const skip = (page - 1) * limit;
       pipeline.push({ $skip: skip }, { $limit: parseInt(limit) });
-    }
+     }
+   
+    
+    
 
     // Execute the aggregation pipeline
     const limitedData = await Employee.aggregate(pipeline);
@@ -311,7 +314,7 @@ exports.fetchEmployeeById = async (req, res) => {
     }
 
     // Extract specific fields from the employee object
-    const { name, email, mobileNumber, designation, address, identity, photo } =
+    const { name, email, mobileNumber, designation, state,zipCode, identity, photo } =
       employee;
 
     res.status(200).json(
@@ -320,7 +323,8 @@ exports.fetchEmployeeById = async (req, res) => {
         email,
         mobileNumber,
         designation,
-        address,
+        state,
+        zipCode,
         identity,
         photo,
       })
@@ -347,14 +351,16 @@ exports.updateEmployee = async (req, res) => {
     }
     let photo = "",
       _IDURL = "";
-    if (req.files) {
-      if (req.files["photo"].length > 0) {
+      console.log(req.files)
+    if (!_.isEmpty(req.files)) {
+      if (req.files["photo"]?.length > 0) {
         photo = req.files["photo"][0].location;
       }
       if (req.files["_IDURL"].length > 0) {
         _IDURL = req.files["_IDURL"][0].location;
       }
     }
+    
 
     // Validate request data using Yup schema
     // Update the schema as needed for the update operation
@@ -369,11 +375,13 @@ exports.updateEmployee = async (req, res) => {
       designation,
       identityType,
       identityNumber,
-      address,
+      state,
+      zipCode
     } = req.body;
 
     // Find the employee by ID
-    const employee = await Employee.findById(id);
+    const employee = await Employee.findById(id).populate("userRole").exec();
+    console.log(employee)
 
     if (!employee) {
       return res.status(404).json({
@@ -455,7 +463,8 @@ exports.updateEmployee = async (req, res) => {
     employee.mobileNumber = mobileNumber;
     employee.email = email;
     employee.designation = designation;
-    employee.address = address;
+    employee.state = state;
+    employee.zipCode = zipCode;
     employee.identity = {
       _IDType: identityType,
       _IDNumber: identityNumber,
@@ -521,7 +530,7 @@ exports.deleteEmployee = async (req, res) => {
     await Employee.findByIdAndDelete(id);
 
     // Delete the employee's entry from the UsersRoles collection
-    await UsersRoles.findByIdAndDelete(employee.userRole._id);
+    await UserRole.findByIdAndDelete(employee.userRole._id);
 
     // Remove the employee ID from the subAdmins collection
     await SubAdmin.updateMany(
