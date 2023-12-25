@@ -5,6 +5,7 @@ const RoleSchema = new mongoose.Schema(
     userMongoId: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "userModel",
+      unique:true
     },
     userModel: {
       type: String,
@@ -12,6 +13,8 @@ const RoleSchema = new mongoose.Schema(
     },
     firebaseId: {
       type: String,
+      required:true,
+      unique:true
     },
     role: {
       admin: {

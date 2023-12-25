@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 const designations = ["Caller", "Preparer", "Reviewer", "Final Drafter"];
 
-const empSchema = new mongoose.Schema(
+const clientSchema = new mongoose.Schema(
   {
     id: {
       type: String,
       required: true,
+      unique:true
     },
 
     name: {
@@ -15,11 +16,13 @@ const empSchema = new mongoose.Schema(
     mobileNumber: {
       type: String,
       required: true,
+      unique:true
     },
 
     email: {
       type: String,
       required: true,
+      unique:true
     },
     photo: String,
     state: String,
@@ -27,6 +30,7 @@ const empSchema = new mongoose.Schema(
     callId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "calls",
+      
     },
 
     caller: {
@@ -57,4 +61,4 @@ const empSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("employees", empSchema);
+module.exports = mongoose.model("clients", clientSchema);

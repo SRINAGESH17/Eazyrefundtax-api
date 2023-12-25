@@ -4,13 +4,11 @@ const {
   checkEmailExistsInAuth,
   checkMobileExistsInAuth,
 } = require("../utils/helperFunc");
-const { VendorSuccessRegister } = require("../utils/sendMail");
+const { VendorSuccessRegister, SubAdminSuccessRegister } = require("../utils/sendMail");
 const SubAdmin = require("../models/SubAdmin");
-const UserRole = require('../models/UserRole');
+const UserRole = require("../models/UserRole");
 const { failedResponse, successResponse } = require("../utils/message");
 const generateId = require("../utils/genRandomId");
-
-
 
 // Define a Yup schema for request data validation
 const createSubAdminSchema = yup.object().shape({
@@ -21,7 +19,6 @@ const createSubAdminSchema = yup.object().shape({
     .email("Invalid email format")
     .required("Email is required"),
   password: yup.string().required("Password is required"),
-
 });
 const updateSubAdminSchema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -30,7 +27,6 @@ const updateSubAdminSchema = yup.object().shape({
     .string()
     .email("Invalid email format")
     .required("Email is required"),
-
 });
 
 exports.createSubAdmin = async (req, res) => {
@@ -45,10 +41,11 @@ exports.createSubAdmin = async (req, res) => {
     // Validate request data using Yup schema
     await createSubAdminSchema.validate(req.body, { abortEarly: false });
 
-    const { name, mobileNumber, email, password, permissions,state,zipCode } =
+    const { name, mobileNumber, email, password, permissions, state, zipCode } =
       req.body;
-      console.log(permissions)
-    const parsedPermissions =typeof permissions === "string" ? JSON.parse(permissions) : permissions;
+    console.log(permissions);
+    const parsedPermissions =
+      typeof permissions === "string" ? JSON.parse(permissions) : permissions;
 
     // Check if email already exists in Firebase Authentication
     const emailExistsInAuth = await checkEmailExistsInAuth(email);
@@ -91,7 +88,7 @@ exports.createSubAdmin = async (req, res) => {
       photo,
       permissions: parsedPermissions,
       state,
-      zipCode
+      zipCode,
     });
 
     const savedSubAdmin = await newSubAdmin.save();
@@ -131,23 +128,19 @@ exports.createSubAdmin = async (req, res) => {
 
     await newSubAdmin.save();
 
-    await VendorSuccessRegister(email, password, name);
+    await SubAdminSuccessRegister(email, password, name);
 
     return res
       .status(201)
       .json(successResponse(201, true, "SubAdminloyee created successfully"));
   } catch (error) {
     // Handle Yup validation errors
-    console.log(error)
+    console.log(error);
     if (error.name === "ValidationError") {
-     
       return res
         .status(400)
-        .json(
-          failedResponse(400, false, "Validation failed", error.errors)
-        );
+        .json(failedResponse(400, false, "Validation failed", error.errors));
     }
-    
 
     // Handle other errors...
     res
@@ -156,9 +149,6 @@ exports.createSubAdmin = async (req, res) => {
   }
 };
 
-
-
-
 exports.updateSubAdmin = async (req, res) => {
   try {
     const { id } = req.params;
@@ -166,7 +156,7 @@ exports.updateSubAdmin = async (req, res) => {
     if (!id) {
       return res.status(400).json({
         success: false,
-        error: 'SubAdmin ID is required.',
+        error: "SubAdmin ID is required.",
       });
     }
 
@@ -177,7 +167,8 @@ exports.updateSubAdmin = async (req, res) => {
     await updateSubAdminSchema.validate(req.body, { abortEarly: false });
 
     const { name, mobileNumber, email, address, permissions } = req.body;
-    const parsedPermissions =typeof permissions === "string" ? JSON.parse(permissions) : permissions;
+    const parsedPermissions =
+      typeof permissions === "string" ? JSON.parse(permissions) : permissions;
 
     // Find the SubAdmin by ID
     const subAdmin = await SubAdmin.findById(id);
@@ -185,7 +176,7 @@ exports.updateSubAdmin = async (req, res) => {
     if (!subAdmin) {
       return res.status(404).json({
         success: false,
-        error: 'SubAdmin not found.',
+        error: "SubAdmin not found.",
       });
     }
 
@@ -193,30 +184,40 @@ exports.updateSubAdmin = async (req, res) => {
     if (email !== subAdmin.email) {
       const emailExistsInSubAdmins = await SubAdmin.findOne({ email });
       if (emailExistsInSubAdmins) {
-        return res.status(400).json(failedResponse(400, false, 'Email already exists.'));
+        return res
+          .status(400)
+          .json(failedResponse(400, false, "Email already exists."));
       }
 
       const emailExistsInAuth = await checkEmailExistsInAuth(email);
       if (emailExistsInAuth) {
-        return res.status(400).json(failedResponse(400, false, 'Email already exists.'));
+        return res
+          .status(400)
+          .json(failedResponse(400, false, "Email already exists."));
       }
       await firebase.auth().updateUser(employee.userRole.firebaseId, { email });
-
     }
 
     // Check if the updated mobile number is already associated with another SubAdmin or user account
     if (mobileNumber !== subAdmin.mobileNumber) {
       const mobileExistsInSubAdmins = await SubAdmin.findOne({ mobileNumber });
       if (mobileExistsInSubAdmins) {
-        return res.status(400).json(failedResponse(400, false, 'Mobile number already exists.'));
+        return res
+          .status(400)
+          .json(failedResponse(400, false, "Mobile number already exists."));
       }
 
       const mobileExistsInAuth = await checkMobileExistsInAuth(mobileNumber);
       if (mobileExistsInAuth) {
-        return res.status(400).json(failedResponse(400, false, 'Mobile number already exists.'));
+        return res
+          .status(400)
+          .json(failedResponse(400, false, "Mobile number already exists."));
       }
-      await firebase.auth().updateUser(employee.userRole.firebaseId, { phoneNumber: mobileNumber });
-
+      await firebase
+        .auth()
+        .updateUser(employee.userRole.firebaseId, {
+          phoneNumber: mobileNumber,
+        });
     }
 
     // Update SubAdmin fields
@@ -229,25 +230,37 @@ exports.updateSubAdmin = async (req, res) => {
     // Save the updated SubAdmin
     const updatedSubAdmin = await subAdmin.save();
 
-    return res.status(201).json(successResponse(201, true, 'SubAdmin updated successfully', updatedSubAdmin));
+    return res
+      .status(201)
+      .json(
+        successResponse(
+          201,
+          true,
+          "SubAdmin updated successfully",
+          updatedSubAdmin
+        )
+      );
   } catch (error) {
     // Handle Yup validation errors
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       const validationErrors = error.errors.reduce((acc, curr) => {
         acc[curr.path] = curr.message;
         return acc;
       }, {});
-      return res.status(400).json(failedResponse(400, false, 'Validation failed', validationErrors));
+      return res
+        .status(400)
+        .json(
+          failedResponse(400, false, "Validation failed", validationErrors)
+        );
     }
 
     // Handle other errors...
-    console.error('Error updating SubAdmin:', error);
-    res.status(500).json(failedResponse(500, false, 'Internal Server Error', error));
+    console.error("Error updating SubAdmin:", error);
+    res
+      .status(500)
+      .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };
-
-
-
 
 exports.getSubAdmins = async (req, res) => {
   try {
@@ -281,12 +294,13 @@ exports.getSubAdmins = async (req, res) => {
 
     const subAdmins = await subAdminsQuery.exec();
 
-    return res.status(200).json(successResponse(200, true, "Employee Fetched successfully", {
+    return res.status(200).json(
+      successResponse(200, true, "Employee Fetched successfully", {
         limitedData: subAdmins,
         totalData,
         currentPage: parseInt(page, 10) || 1,
-     } ))
- 
+      })
+    );
   } catch (error) {
     console.error("Error fetching SubAdmins:", error);
     res
@@ -367,7 +381,6 @@ exports.deleteSubAdmin = async (req, res) => {
       .status(200)
       .json(successResponse(200, true, "SubAdmin deleted successfully"));
   } catch (error) {
- 
     res
       .status(500)
       .json(failedResponse(500, false, "Internal Server Error", error));

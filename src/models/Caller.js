@@ -5,11 +5,14 @@ const callerSchema = new mongoose.Schema(
     employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "employees",
+      required:true,
+      unique:true
     },
     calls: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "calls",
+        unique:true
       },
     ],
 
@@ -17,12 +20,14 @@ const callerSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "clients",
+        unique:true
       },
     ],
     clientYearlyTaxations: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "client_yearly_taxations",
+        unique:true
       },
     ],
 
@@ -30,12 +35,14 @@ const callerSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "client_documents",
+        unique:true
       },
     ],
     taxReturnDocuments: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "tax_return_documents",
+        unique:true
       },
     ],
   },
