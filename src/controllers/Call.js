@@ -35,10 +35,26 @@ const callSchema = yup.object().shape({
 
 exports.createCallData = async (req, res) => {
   try {
+    // Validate request data using Yup schema
     const validatedData = await callSchema.validate(req.body, {
       abortEarly: false,
     });
+    
     const { caller, slotName, comment } = validatedData;
+
+    // Check if the caller's email or mobile number already exists in the calls collection
+    const existingCaller = await Call.findOne({
+      $or: [
+        { "caller.mobileNumber": caller.mobileNumber },
+        { "caller.email": caller.email },
+      ],
+    });
+
+    if (existingCaller) {
+      return res
+        .status(400)
+        .json(failedResponse(400, false, "Caller already exists."));
+    }
 
     var randomNum = "";
 
@@ -62,7 +78,6 @@ exports.createCallData = async (req, res) => {
       slotName,
       caller,
       comment,
-    
     });
 
     await newCall.save();
@@ -71,7 +86,7 @@ exports.createCallData = async (req, res) => {
       .status(201)
       .json(successResponse(201, true, "Call created successfully"));
   } catch (error) {
-    if (error instanceof yup.validationErrors) {
+    if (error instanceof yup.ValidationError) {
       const validationErrors = error.errors.reduce((acc, curr) => {
         acc[curr.path] = curr.message;
         return acc;
@@ -105,9 +120,9 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         let { email, mobileNumber, name, comment } = row;
 
         // Trim and remove unwanted characters
-        email = email.trim().replace(/[,/]/g, "");
-        mobileNumber = mobileNumber.trim().replace(/[,/]/g, "");
-        name = name.trim().replace(/[,/]/g, "");
+        email = email?.trim().replace(/[,/]/g, "");
+        mobileNumber = mobileNumber?.trim().replace(/[,/]/g, "");
+        name = name?.trim().replace(/[,/]/g, "");
 
         // Yup schema for validation
         const schema = yup.object().shape({
@@ -130,6 +145,7 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         });
 
         if (existingCall) {
+          console.log("existing call",existingCall,email,mobileNumber)
           throw {
             row: index,
             code: 400,
@@ -139,18 +155,23 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
           };
         }
 
-        // Generate a unique call ID
-        const randomNum = "CALL" + generateId(6);
-        const result = await Call.findOne({ id: randomNum });
+        var randomNum = "";
 
-        if (result) {
-          throw {
-            row: index,
-            code: 500,
-            status: false,
-            message: "Failed to generate a unique call ID.",
-          };
+        async function getUniqueNumber() {
+          randomNum = "CALL" + generateId(6);
+    
+          try {
+            const result = await Call.findOne({ id: randomNum });
+            if (result) {
+              return getUniqueNumber();
+            }
+            return randomNum;
+          } catch (err) {
+            console.log("id-------",err)
+            throw err;
+          }
         }
+        getUniqueNumber();
 
         const newCall = new Call({
           id: randomNum,
@@ -162,6 +183,8 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         const savedCall = await newCall.save();
 
         if (!savedCall) {
+          console.log("saved call",savedCall)
+
           throw {
             row: index,
             code: 500,

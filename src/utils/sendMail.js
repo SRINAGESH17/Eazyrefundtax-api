@@ -12,76 +12,87 @@ const sender = {
   name: 'Eazy Refund',
 };
 
-const VendorSuccessRegister = async(to, pass, name) => {
-    console.log(to, pass, name, "---------");
-    const receivers = [
-        {
-          email: to,
-        },
-      ];
-    
-      await tranEmailApi.sendTransacEmail({
-        sender,
-        to: receivers,
-        subject: 'Welcome to EJOYSHOP - Successful Vendor Registration!',
-        htmlContent:  `<div style="color:black"><p>Dear ${name} ,</p>
+const EmployeeSuccessRegister = async (to, pass, name) => {
+  console.log(to, pass, name, "---------");
 
-        <p>Congratulations and welcome to EJOYSHOP! We are excited to have you as a vendor on our platform. Your registration process has been successfully completed, and we can't wait to see your products thrive in our marketplace.</p> 
-        
+  const receivers = [
+    {
+      email: to,
+    },
+  ];
+
+  await tranEmailApi.sendTransacEmail({
+    sender,
+    to: receivers,
+    subject: 'Welcome to EazyRefundTax - Successful Employee Registration!',
+    htmlContent: `<div style="color:black">
+        <p>Dear ${name},</p>
+
+        <p>Congratulations and welcome to EazyRefundTax! We are delighted to have you as an employee in our organization. Your registration process has been successfully completed, and we are eager to embark on this journey together.</p> 
+
         <p>Here are your login credentials:</p> 
-        
+
         <p>Username: ${to}<br/> 
         Password: ${pass}</p> 
-        
-        <p>Please keep these credentials safe and confidential. They are crucial for accessing and managing your vendor account. In case you forget your password, you can use the "Forgot Password" option on our login page to reset it.</p> 
-        
-        <p>At EJOYSHOP, we provide you with an intuitive dashboard that enables you to effortlessly add, edit, and manage your product listings. We also offer robust analytics and reporting tools to help you gain insights into your sales performance and customer behaviour.</p> 
-        
-        <p>Feel free to explore our vendor documentation in our knowledge base to familiarize yourself with all the features and maximize your vendor experience.</p> 
-        
-        <p>Should you need any assistance or have questions, our support team is here to help. You can reach us through the contact details provided at the end of this email.</p> 
-        
-        <p>Once again, welcome to EJOYSHOP! We're thrilled to have you join our community of vendors, and we look forward to your success.</p>
-        
+
+        <p>Please ensure the confidentiality of these credentials, as they are essential for accessing and managing your employee account. If you happen to forget your password, you can use the "Forgot Password" option on our login page to reset it.</p> 
+
+        <p>At EazyRefundTax, we provide you with tools and resources to streamline your work and contribute to our mission. Your dedication and efforts play a crucial role in our success.</p> 
+
+        <p>Explore our internal systems and documentation to familiarize yourself with the workflows and processes. If you have any questions or need assistance, our support team is here to help. You can find the contact details at the end of this email.</p> 
+
+        <p>Once again, welcome to EazyRefundTax! We're excited to have you on board, and we look forward to achieving great things together.</p>
+
         <p>Best regards,</br> 
-        EJOYSHOP Onboarding Team</p></div>`,
-      });
-   
-}
-
-
-const VendorRejectionRegister = async(to, name) => {
-    console.log(to, name, "---------");
-
-    const receivers = [
-      {
-        email: to,
-      },
-    ];
-  
-    await tranEmailApi.sendTransacEmail({
-      sender,
-      to: receivers,
-      subject:  'Update on Your Vendor Registration Application - Rejection Notice',
-      htmlContent: `<div style="color:black"><p>Dear ${name}</p>,
-
-      <p>Thank you for your interest in becoming a vendor at EJOYSHOP. We appreciate the time and effort you put into your application. After careful consideration, we regret to inform you that your vendor registration has not been approved at this time.</p>
-
-      <p>While we understand this may come as disappointing news, please note that our decision is based on various factors and requirements specific to our platform and current vendor capacity. We encourage you to continue pursuing your business goals and exploring other opportunities that align with your products and services.</p>
-
-      <p>Although your application was not successful at this time, we appreciate your interest in EJOYSHOP and the effort you have made to be a part of our vendor community. We sincerely value your interest in our platform.</p>
-
-      <p>If you have any further questions or would like to receive feedback regarding your application, please do not hesitate to reach out to us. We are more than willing to provide additional insights that may help you in future endeavors.</p>
-
-      <p>Thank you once again for considering EJOYSHOP. We wish you the very best in your business ventures, and we hope our paths may cross again in the future.</p>
-
-      <p>Best regards,<br/>
-      EJOYSHOP  Onboarding Team</p></div>`
-      
-    });
-}
+        EazyRefundTax HR Team</p>
+      </div>`,
+  });
+};
 
 
 
 
-module.exports = {VendorSuccessRegister, VendorRejectionRegister}
+const SubAdminSuccessRegister = async (to, pass, name) => {
+  console.log(to, pass, name, "---------");
+
+  const receivers = [
+    {
+      email: to,
+    },
+  ];
+
+  await tranEmailApi.sendTransacEmail({
+    sender,
+    to: receivers,
+    subject: 'Welcome to EazyRefundTax - Successful Sub-Admin Registration!',
+    htmlContent: `<div style="color:black">
+        <p>Dear ${name},</p>
+
+        <p>Congratulations and welcome to EazyRefundTax! We are thrilled to have you as a Sub-Admin in our organization. Your registration process has been successfully completed, and we look forward to working together to ensure the success of our operations.</p>
+
+        <p>Here are your login credentials:</p>
+
+        <p>Username: ${to}<br/>
+        Password: ${pass}</p>
+
+        <p>Please ensure the confidentiality of these credentials, as they are vital for accessing and managing your Sub-Admin account. If you happen to forget your password, you can use the "Forgot Password" option on our login page to reset it.</p>
+
+        <p>As a Sub-Admin, you play a crucial role in the management and oversight of our system. We trust that your skills and expertise will contribute significantly to the success of our organization.</p>
+
+        <p>Feel free to explore our internal systems and documentation to familiarize yourself with your responsibilities and privileges. If you have any questions or need assistance, our support team is here to help. You can find the contact details at the end of this email.</p>
+
+        <p>Once again, welcome to EazyRefundTax! We're excited to have you on board, and we look forward to achieving great milestones together.</p>
+
+        <p>Best regards,<br/>
+        EazyRefundTax Admin Team</p>
+      </div>`,
+  });
+};
+
+
+
+
+
+
+
+module.exports = {EmployeeSuccessRegister, SubAdminSuccessRegister}

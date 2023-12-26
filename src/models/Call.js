@@ -18,6 +18,7 @@ const callSchema = new mongoose.Schema(
     id: {
       type: String,
       required: true,
+      unique:true
     },
     slotName: {
       type: String,
@@ -25,14 +26,12 @@ const callSchema = new mongoose.Schema(
     },
     caller: {
       name: String,
-      mobileNumber: String,
-      email: String,
+      mobileNumber: {type:String,unique:true},
+      email: {type:String,unique:true},
     },
     comment: String,
     status: {
       type: String,
-
-     
       enum: statuses,
     },
     assignedEmployees: [

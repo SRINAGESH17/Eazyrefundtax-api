@@ -1,3 +1,4 @@
+const { truncate } = require("lodash");
 const mongoose = require("mongoose");
 const designations = ["Caller", "Preparer", "Reviewer", "Final Drafter"];
 
@@ -6,6 +7,7 @@ const empSchema = new mongoose.Schema(
     id: {
       type: String,
       required: true,
+      unique:true
     },
 
     name: {
@@ -15,11 +17,13 @@ const empSchema = new mongoose.Schema(
     mobileNumber: {
       type: String,
       required: true,
+      unique:true
     },
 
     email: {
       type: String,
       required: true,
+      unique:true
     },
     photo: String,
     state: String,
@@ -27,7 +31,7 @@ const empSchema = new mongoose.Schema(
     designation: {
       type: String,
       enum: designations,
-      required: true,
+      required:true
     },
     identity: {
       _IDType: {
@@ -38,12 +42,14 @@ const empSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "suspended"],
+      enum: ["active", "inactive"],
       default: "active",
+      required:true
     },
     userRole: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user_roles",
+      
     },
     assignedAdmin: {
       type: mongoose.Schema.Types.ObjectId,
@@ -52,9 +58,11 @@ const empSchema = new mongoose.Schema(
     designationRef:{
       type: mongoose.Schema.Types.ObjectId,
       ref: "designationModel",
+    
     },
     designationModel:{
-      type:String
+      type:String,
+     
     }
    
   },
