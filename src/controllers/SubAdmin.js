@@ -31,6 +31,7 @@ const updateSubAdminSchema = yup.object().shape({
 
 exports.createSubAdmin = async (req, res) => {
   try {
+   
     let photo = "";
     if (req.files) {
       if (req.files["photo"]?.length > 0) {
@@ -51,16 +52,14 @@ exports.createSubAdmin = async (req, res) => {
     const emailExistsInAuth = await checkEmailExistsInAuth(email);
     if (emailExistsInAuth) {
       return res
-        .status(400)
-        .json(failedResponse(400, false, "Email already exists."));
+        .status(400).json(failedResponse(400, false, "Email already exists."));
     }
 
     // Check if mobile number already exists
     const mobileExistsInAuth = await checkMobileExistsInAuth(mobileNumber);
     if (mobileExistsInAuth) {
       return res
-        .status(400)
-        .json(failedResponse(400, false, "Mobile number already exists."));
+        .status(400).json(failedResponse(400, false, "Mobile number already exists."));
     }
 
     var randomNum = "";
@@ -75,10 +74,12 @@ exports.createSubAdmin = async (req, res) => {
         }
         return randomNum;
       } catch (err) {
+        console.log(err)
         throw err;
       }
     }
     getUniqueNumber();
+
 
     const newSubAdmin = new SubAdmin({
       id: randomNum,
@@ -90,8 +91,9 @@ exports.createSubAdmin = async (req, res) => {
       state,
       zipCode,
     });
-
+    
     const savedSubAdmin = await newSubAdmin.save();
+   
     if (!savedSubAdmin) {
       return res
         .status(500)
