@@ -58,7 +58,7 @@ exports.createEmployee = async (req, res) => {
     }
 
     // Validate request data using Yup schema
-    await createEmployeeSchema.validate(req.body, { abortEarly: false });
+    // await createEmployeeSchema.validate(req.body, { abortEarly: false });
 
     const {
       name,
@@ -71,6 +71,8 @@ exports.createEmployee = async (req, res) => {
       state,
       zipCode,
     } = req.body;
+
+    console.log(req.body, "Create employee data received");
 
     // Check if email already exists in Firebase Authentication
     const isEmailExist = await Employee.find({email});
@@ -96,7 +98,7 @@ exports.createEmployee = async (req, res) => {
       randomNum = "E" + generateId(2);
 
       try {
-        const result = await SubAdmin.findOne({ id: randomNum });
+        const result = await Employee.findOne({ id: randomNum });
         if (result) {
           return getUniqueNumber();
         }

@@ -44,9 +44,9 @@ exports.createSubAdmin = async (req, res) => {
 
     const { name, mobileNumber, email, password, permissions, state, zipCode } =
       req.body;
-    console.log(permissions);
-    const parsedPermissions =
-      typeof permissions === "string" ? JSON.parse(permissions) : permissions;
+      console.log(req.body);
+
+    const parsedPermissions =typeof permissions === "string" ? JSON.parse(permissions) : permissions;
 
     // Check if email already exists in Firebase Authentication
     const emailExistsInAuth = await checkEmailExistsInAuth(email);
