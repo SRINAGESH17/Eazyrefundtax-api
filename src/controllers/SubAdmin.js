@@ -39,13 +39,16 @@ exports.createSubAdmin = async (req, res) => {
     }
 
     // Validate request data using Yup schema
+
+    console.log(req.body, "create subadmin data received");
     await createSubAdminSchema.validate(req.body, { abortEarly: false });
 
     const { name, mobileNumber, email, password, permissions, state, zipCode } =
       req.body;
-      console.log(req.body);
+    console.log(req.body);
 
-    const parsedPermissions =typeof permissions === "string" ? JSON.parse(permissions) : permissions;
+    const parsedPermissions =
+      typeof permissions === "string" ? JSON.parse(permissions) : permissions;
 
     // Check if email already exists in Firebase Authentication
     const emailExistsInAuth = await checkEmailExistsInAuth(email);
@@ -132,7 +135,7 @@ exports.createSubAdmin = async (req, res) => {
 
     return res
       .status(201)
-      .json(successResponse(201, true, "SubAdminloyee created successfully"));
+      .json(successResponse(201, true, "SubAdmin employee created successfully"));
   } catch (error) {
     // Handle Yup validation errors
     console.log(error);
@@ -153,11 +156,20 @@ exports.updateSubAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log(id, "data received ", req.body);
+
     if (!id) {
       return res.status(400).json({
         success: false,
         error: "SubAdmin ID is required.",
       });
+    }
+
+    let photo = "";
+    if (req.files) {
+      if (req.files["photo"]?.length > 0) {
+        photo = req.files["photo"][0].location;
+      }
     }
 
     // Validate request data using Yup schema
@@ -166,12 +178,14 @@ exports.updateSubAdmin = async (req, res) => {
     // You can adjust it based on the fields that can be updated
     await updateSubAdminSchema.validate(req.body, { abortEarly: false });
 
-    const { name, mobileNumber, email, address, permissions } = req.body;
+    const { name, mobileNumber, email, state, zipCode, permissions } = req.body;
     const parsedPermissions =
       typeof permissions === "string" ? JSON.parse(permissions) : permissions;
 
     // Find the SubAdmin by ID
-    const subAdmin = await SubAdmin.findById(id);
+    const subAdmin = await SubAdmin.findById(id).populate("userRole").exec();
+
+    console.log(subAdmin,"187")
 
     if (!subAdmin) {
       return res.status(404).json({
@@ -195,7 +209,7 @@ exports.updateSubAdmin = async (req, res) => {
           .status(400)
           .json(failedResponse(400, false, "Email already exists."));
       }
-      await firebase.auth().updateUser(employee.userRole.firebaseId, { email });
+      await firebase.auth().updateUser(subAdmin.userRole.firebaseId, { email });
     }
 
     // Check if the updated mobile number is already associated with another SubAdmin or user account
@@ -213,19 +227,29 @@ exports.updateSubAdmin = async (req, res) => {
           .status(400)
           .json(failedResponse(400, false, "Mobile number already exists."));
       }
-      await firebase
-        .auth()
-        .updateUser(employee.userRole.firebaseId, {
-          phoneNumber: mobileNumber,
-        });
+      await firebase.auth().updateUser(subAdmin.userRole.firebaseId, {
+        phoneNumber: mobileNumber,
+      });
     }
 
     // Update SubAdmin fields
     subAdmin.name = name;
     subAdmin.mobileNumber = mobileNumber;
     subAdmin.email = email;
-    subAdmin.address = address;
+
+    subAdmin.state = state;
+    subAdmin.zipCode = zipCode;
     subAdmin.permissions = parsedPermissions;
+    console.log(subAdmin,"above")
+    if (photo) {
+      await firebase
+        .auth()
+        .updateUser(subAdmin.userRole.firebaseId, { photoURL: photo });
+      console.log(photo, "photo received");
+      subAdmin.photo = photo;
+    }
+
+    console.log(subAdmin, "a");
 
     // Save the updated SubAdmin
     const updatedSubAdmin = await subAdmin.save();
@@ -266,6 +290,8 @@ exports.getSubAdmins = async (req, res) => {
   try {
     const { searchKey, page, limit, downloadable } = req.query;
 
+    console.log(req.query);
+
     const query = {};
 
     // Add search query if searchKey is provided
@@ -284,7 +310,7 @@ exports.getSubAdmins = async (req, res) => {
     let subAdminsQuery = SubAdmin.find(query);
 
     // Apply pagination if downloadable is not true
-    if (!parseBoolean(downloadable)) {
+    if (!Boolean(downloadable)) {
       const currentPage = parseInt(page, 10) || 1;
       const itemsPerPage = parseInt(limit, 10) || 10;
       const skip = (currentPage - 1) * itemsPerPage;
@@ -312,6 +338,8 @@ exports.getSubAdmins = async (req, res) => {
 exports.getSubAdminById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    console.log(id, "id received");
 
     if (!id) {
       return res.status(400).json({
@@ -351,6 +379,8 @@ exports.deleteSubAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log(id, "delete id subadmin");
+
     if (!id) {
       return res.status(400).json({
         success: false,
@@ -367,6 +397,8 @@ exports.deleteSubAdmin = async (req, res) => {
         error: "SubAdmin not found.",
       });
     }
+
+    console.log(subAdmin, "subadmin ");
 
     // Delete the SubAdmin's Firebase Authentication account
     await firebase.auth().deleteUser(subAdmin.userRole.firebaseId);

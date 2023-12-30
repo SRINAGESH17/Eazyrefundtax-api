@@ -225,6 +225,8 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
 
 exports.fetchSlotWiseCallData = async (req, res, next) => {
   try {
+    // const callData = await Call.find()
+
     const callDataBySlot = await Call.aggregate([
       {
         $group: {
@@ -460,7 +462,10 @@ exports.assignCalls = async (req, res) => {
     }
 
     // Validate numberOfCalls
-    if (numberOfCalls && !Number.isInteger(numberOfCalls) || numberOfCalls <= 0) {
+    if (
+      (numberOfCalls && !Number.isInteger(numberOfCalls)) ||
+      numberOfCalls <= 0
+    ) {
       return res
         .status(400)
         .json(
@@ -485,7 +490,7 @@ exports.assignCalls = async (req, res) => {
       currentEmployee: { $exists: false },
     }).limit(numberOfCalls);
 
-    if (numberOfCalls &&  unassignedCalls.length < numberOfCalls) {
+    if (numberOfCalls && unassignedCalls.length < numberOfCalls) {
       return res
         .status(400)
         .json(
@@ -535,6 +540,8 @@ exports.migrateCalls = async (req, res) => {
   try {
     const { fromCallerId, toCallerId, callType, numberOfCalls } = req.body;
 
+    console.log(req.body, "migrate calls received");
+
     // Validate fromCallerMongoid and toCallerMongoid
     if (
       !mongoose.Types.ObjectId.isValid(fromCallerId) ||
@@ -546,7 +553,10 @@ exports.migrateCalls = async (req, res) => {
     }
 
     // Validate numberOfCalls
-    if (numberOfCalls && !Number.isInteger(numberOfCalls) || numberOfCalls <= 0) {
+    if (
+      (numberOfCalls && !Number.isInteger(numberOfCalls)) ||
+      numberOfCalls <= 0
+    ) {
       return res
         .status(400)
         .json(
@@ -569,20 +579,19 @@ exports.migrateCalls = async (req, res) => {
     }
 
     // Find calls to transfer
-const callQuery = {
-  currentEmployee: fromCaller._id,
-};
+    const callQuery = {
+      currentEmployee: fromCaller._id,
+    };
 
-if (callType === "PENDING") {
-  callQuery.status = { $exists: false };
-} else {
-  callQuery.status = callType;
-}
+    if (callType === "PENDING") {
+      callQuery.status = { $exists: false };
+    } else {
+      callQuery.status = callType;
+    }
 
-const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
+    const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
 
-
-    if (numberOfCalls &&  callsToTransfer.length < numberOfCalls) {
+    if (numberOfCalls && callsToTransfer.length < numberOfCalls) {
       return res
         .status(400)
         .json(
