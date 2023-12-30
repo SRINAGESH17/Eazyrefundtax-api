@@ -220,9 +220,6 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
       .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };
-
-
-
 exports.fetchSlotWiseCallData = async (req, res, next) => {
   try {
     // const callData = await Call.find()
@@ -272,7 +269,6 @@ exports.fetchSlotWiseCallData = async (req, res, next) => {
       );
   }
 };
-
 exports.fetchEmployeeWiseData = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -346,7 +342,6 @@ exports.fetchEmployeeWiseData = async (req, res, next) => {
       );
   }
 };
-
 exports.fetchCalls = async (req, res, next) => {
   try {
     const { searchKey, status, page = 1, limit = 10 } = req.query;
@@ -449,7 +444,6 @@ exports.deleteCall = async (req, res) => {
       .json(failedResponse(400, false, "Internal Server Error", error));
   }
 };
-
 exports.assignCalls = async (req, res) => {
   try {
     const { callerMongoId, numberOfCalls } = req.body;
@@ -535,7 +529,6 @@ exports.assignCalls = async (req, res) => {
     res.status(500).json(failedResponse(500, false, "Internal Server Error"));
   }
 };
-
 exports.migrateCalls = async (req, res) => {
   try {
     const { fromCallerId, toCallerId, callType, numberOfCalls } = req.body;
