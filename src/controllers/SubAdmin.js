@@ -161,6 +161,12 @@ exports.updateSubAdmin = async (req, res) => {
         error: "SubAdmin ID is required.",
       });
     }
+    let photo = "";
+    if (req.files) {
+      if (req.files["photo"]?.length > 0) {
+        photo = req.files["photo"][0].location;
+      }
+    }
 
     // Validate request data using Yup schema
     // Update the schema as needed for the update operation
@@ -168,12 +174,13 @@ exports.updateSubAdmin = async (req, res) => {
     // You can adjust it based on the fields that can be updated
     await updateSubAdminSchema.validate(req.body, { abortEarly: false });
 
-    const { name, mobileNumber, email, address, permissions } = req.body;
+    const { name, mobileNumber, email, state,zipCode, permissions } = req.body;
     const parsedPermissions =
       typeof permissions === "string" ? JSON.parse(permissions) : permissions;
 
     // Find the SubAdmin by ID
-    const subAdmin = await SubAdmin.findById(id);
+    const subAdmin = await SubAdmin.findById(id).populate("userRole").exec();
+    console.log(subAdmin)
 
     if (!subAdmin) {
       return res.status(404).json({
@@ -197,7 +204,7 @@ exports.updateSubAdmin = async (req, res) => {
           .status(400)
           .json(failedResponse(400, false, "Email already exists."));
       }
-      await firebase.auth().updateUser(employee.userRole.firebaseId, { email });
+      await firebase.auth().updateUser(subAdmin.userRole.firebaseId, { email });
     }
 
     // Check if the updated mobile number is already associated with another SubAdmin or user account
@@ -217,7 +224,7 @@ exports.updateSubAdmin = async (req, res) => {
       }
       await firebase
         .auth()
-        .updateUser(employee.userRole.firebaseId, {
+        .updateUser(subAdmin.userRole.firebaseId, {
           phoneNumber: mobileNumber,
         });
     }
@@ -226,8 +233,14 @@ exports.updateSubAdmin = async (req, res) => {
     subAdmin.name = name;
     subAdmin.mobileNumber = mobileNumber;
     subAdmin.email = email;
-    subAdmin.address = address;
+    subAdmin.state = state;
+    subAdmin.zipCode = zipCode;
     subAdmin.permissions = parsedPermissions;
+
+    if (photo) {
+     subAdmin.photo=photo 
+     await firebase.auth().updateUser(subAdmin.userRole.firebaseId, { photoURL:photo });
+    }
 
     // Save the updated SubAdmin
     const updatedSubAdmin = await subAdmin.save();
@@ -286,7 +299,7 @@ exports.getSubAdmins = async (req, res) => {
     let subAdminsQuery = SubAdmin.find(query);
 
     // Apply pagination if downloadable is not true
-    if (!parseBoolean(downloadable)) {
+    if (Boolean(downloadable?.toLowerCase() !== "true")) {
       const currentPage = parseInt(page, 10) || 1;
       const itemsPerPage = parseInt(limit, 10) || 10;
       const skip = (currentPage - 1) * itemsPerPage;
@@ -361,7 +374,7 @@ exports.deleteSubAdmin = async (req, res) => {
     }
 
     // Find the SubAdmin by ID
-    const subAdmin = await SubAdmin.findById(id);
+    const subAdmin = await SubAdmin.findById(id).populate("userRole").exec();
 
     if (!subAdmin) {
       return res.status(404).json({
@@ -383,6 +396,7 @@ exports.deleteSubAdmin = async (req, res) => {
       .status(200)
       .json(successResponse(200, true, "SubAdmin deleted successfully"));
   } catch (error) {
+    console.log(error)
     res
       .status(500)
       .json(failedResponse(500, false, "Internal Server Error", error));

@@ -17,6 +17,7 @@ const _ = require("lodash");
 const Call = require("../models/Call");
 const Client = require("../models/Client");
 const SubAdmin = require("../models/SubAdmin");
+const { default: mongoose } = require("mongoose");
 
 // Define a Yup schema for request data validation
 const createEmployeeSchema = yup.object().shape({
@@ -192,7 +193,7 @@ exports.createEmployee = async (req, res) => {
 
     savedDesInstance = await newDesInstance.save();
     newEmp.designationRef = savedDesInstance._id;
-    newEmp.userRole = empRole._id;
+    newEmp.userRole = empRoleSaved._id;
 
     await newEmp.save();
 
@@ -591,7 +592,8 @@ exports.deleteEmployee = async (req, res) => {
       });
     }
 
-    const employee = await Employee.findById(id).populate("designationRef").exec();
+    const employee = await Employee.findById(id).populate(["designationRef","userRole"]).exec();
+    console.log(employee);
 
     if (!employee) {
       return res.status(404).json({

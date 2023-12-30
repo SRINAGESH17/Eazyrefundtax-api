@@ -4,7 +4,8 @@ const generateId = require("../utils/genRandomId");
 const { successResponse, failedResponse } = require("../utils/message");
 const XLSX = require("xlsx");
 const Caller = require("../models/Caller");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const Employee = require("../models/Employee");
 
 const callSchema = yup.object().shape({
   slotName: yup.string().required("Slot name is required"),
@@ -32,6 +33,10 @@ const callSchema = yup.object().shape({
       "Invalid status"
     ),
 });
+const updateCallSchema = yup.object().shape({
+  status: yup.string().oneOf(["REGISTERED", "CALLBACK", "WRONGNUMBER", "NOTINTERESTED", "DUPLICATE", "ALREADYFILED", "FIRST", "FOREIGNER", "INTERESTED", "MAILSENT"]),
+  comment: yup.string(),
+});
 
 exports.createCallData = async (req, res) => {
   try {
@@ -39,7 +44,7 @@ exports.createCallData = async (req, res) => {
     const validatedData = await callSchema.validate(req.body, {
       abortEarly: false,
     });
-    
+
     const { caller, slotName, comment } = validatedData;
 
     // Check if the caller's email or mobile number already exists in the calls collection
@@ -104,7 +109,6 @@ exports.createCallData = async (req, res) => {
       .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };
-
 exports.ExcelSheetCallDataUpload = async (req, res, next) => {
   try {
     const { path } = req.file;
@@ -114,11 +118,11 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
     const { slotName } = req.body;
 
     const data = XLSX.utils.sheet_to_json(worksheet);
+    let randomNum = 1;
 
     const callDataPromises = data.map(async (row, index) => {
+      let { email, mobileNumber, name, comment } = row;
       try {
-        let { email, mobileNumber, name, comment } = row;
-
         // Trim and remove unwanted characters
         email = email?.trim().replace(/[,/]/g, "");
         mobileNumber = mobileNumber?.trim().replace(/[,/]/g, "");
@@ -145,7 +149,7 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         });
 
         if (existingCall) {
-          console.log("existing call",existingCall,email,mobileNumber)
+          console.log("existing call", existingCall, email, mobileNumber);
           throw {
             row: index,
             code: 400,
@@ -155,11 +159,9 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
           };
         }
 
-        var randomNum = "";
-
         async function getUniqueNumber() {
           randomNum = "CALL" + generateId(6);
-    
+
           try {
             const result = await Call.findOne({ id: randomNum });
             if (result) {
@@ -167,11 +169,10 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
             }
             return randomNum;
           } catch (err) {
-            console.log("id-------",err)
+            console.log("id-------", err);
             throw err;
           }
         }
-        getUniqueNumber();
 
         const newCall = new Call({
           id: randomNum,
@@ -183,7 +184,7 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         const savedCall = await newCall.save();
 
         if (!savedCall) {
-          console.log("saved call",savedCall)
+          console.log("saved call", savedCall);
 
           throw {
             row: index,
@@ -196,7 +197,7 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         return { success: true, row: index };
       } catch (error) {
         console.log(error);
-        return { success: false, row: index, error: error };
+        return { success: false, email: email, row: index, error: error };
       }
     });
 
@@ -205,14 +206,12 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
     const errors = callDataUpload.filter((result) => !result.success);
     const success = callDataUpload.filter((result) => result.success);
 
-    return res
-      .status(201)
-      .json(
-        successResponse(201, true, "Call Data uploaded successfully", {
-          errors,
-          success,
-        })
-      );
+    return res.status(201).json(
+      successResponse(201, true, "Call Data uploaded successfully", {
+        errors,
+        success,
+      })
+    );
   } catch (error) {
     console.log(error);
     res
@@ -343,8 +342,16 @@ exports.fetchEmployeeWiseData = async (req, res, next) => {
 exports.fetchCalls = async (req, res, next) => {
   try {
     const { searchKey, status, page = 1, limit = 10 } = req.query;
+    const { role, callerId } = req.userRole;
 
     let pipeline = [];
+    if (role.employee) {
+      pipeline.push({
+        $match: {
+          currentEmployee: callerId,
+        },
+      });
+    }
 
     // Match stage for searchKey and status
     const matchStage = {
@@ -409,6 +416,7 @@ exports.fetchCalls = async (req, res, next) => {
       );
   }
 };
+
 exports.deleteCall = async (req, res) => {
   try {
     const callId = req.params.id;
@@ -454,7 +462,10 @@ exports.assignCalls = async (req, res) => {
     }
 
     // Validate numberOfCalls
-    if (numberOfCalls && !Number.isInteger(numberOfCalls) || numberOfCalls <= 0) {
+    if (
+      (numberOfCalls && !Number.isInteger(numberOfCalls)) ||
+      numberOfCalls <= 0
+    ) {
       return res
         .status(400)
         .json(
@@ -479,7 +490,7 @@ exports.assignCalls = async (req, res) => {
       currentEmployee: { $exists: false },
     }).limit(numberOfCalls);
 
-    if (numberOfCalls &&  unassignedCalls.length < numberOfCalls) {
+    if (numberOfCalls && unassignedCalls.length < numberOfCalls) {
       return res
         .status(400)
         .json(
@@ -539,7 +550,10 @@ exports.migrateCalls = async (req, res) => {
     }
 
     // Validate numberOfCalls
-    if (numberOfCalls && !Number.isInteger(numberOfCalls) || numberOfCalls <= 0) {
+    if (
+      (numberOfCalls && !Number.isInteger(numberOfCalls)) ||
+      numberOfCalls <= 0
+    ) {
       return res
         .status(400)
         .json(
@@ -562,20 +576,19 @@ exports.migrateCalls = async (req, res) => {
     }
 
     // Find calls to transfer
-const callQuery = {
-  currentEmployee: fromCaller._id,
-};
+    const callQuery = {
+      currentEmployee: fromCaller._id,
+    };
 
-if (callType === "PENDING") {
-  callQuery.status = { $exists: false };
-} else {
-  callQuery.status = callType;
-}
+    if (callType === "PENDING") {
+      callQuery.status = { $exists: false };
+    } else {
+      callQuery.status = callType;
+    }
 
-const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
+    const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
 
-
-    if (numberOfCalls &&  callsToTransfer.length < numberOfCalls) {
+    if (numberOfCalls && callsToTransfer.length < numberOfCalls) {
       return res
         .status(400)
         .json(
@@ -635,7 +648,10 @@ exports.migratePendingCalls = async (req, res) => {
     }
 
     // Validate numberOfCalls
-    if (numberOfCalls && !Number.isInteger(numberOfCalls) || numberOfCalls <= 0) {
+    if (
+      (numberOfCalls && !Number.isInteger(numberOfCalls)) ||
+      numberOfCalls <= 0
+    ) {
       return res
         .status(400)
         .json(
@@ -647,28 +663,24 @@ exports.migratePendingCalls = async (req, res) => {
         );
     }
 
-    
     const toCaller = await Caller.findById(toCallerId);
 
-    if ( !toCaller) {
+    if (!toCaller) {
       return res
         .status(404)
         .json(failedResponse(404, false, "Caller not found"));
     }
 
-   // Find calls to transfer
-const callQuery = {
+    // Find calls to transfer
+    const callQuery = {};
 
-};
+    if (callType === "PENDING") {
+      callQuery.status = { $exists: false };
+    } else {
+      callQuery.status = callType;
+    }
 
-if (callType === "PENDING") {
-  callQuery.status = { $exists: false };
-} else {
-  callQuery.status = callType;
-}
-
-const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
-
+    const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
 
     if (numberOfCalls && callsToTransfer.length < numberOfCalls) {
       return res
@@ -700,7 +712,6 @@ const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
       }
     );
 
-
     await Caller.findByIdAndUpdate(toCaller._id, {
       $push: { calls: { $each: callsToTransfer.map((call) => call._id) } },
     });
@@ -710,5 +721,62 @@ const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
       .json(successResponse(201, true, "Calls transferred successfully"));
   } catch (error) {
     res.status(500).json(failedResponse(500, false, "Internal Server Error"));
+  }
+};
+exports.updateStatusAndComment = async (req, res) => {
+  try {
+    const { role, callerId } = req.userRole;
+    const callId = req.params.callId;
+
+    let call = await Call.findById(callId);
+
+    if (!call) {
+      return res.status(404).json({ message: "Call not found" });
+    }
+
+
+    if (role.employee && call.currentEmployee !== callerId ) {
+      return res.status(403).json(failedResponse(403,false,"Access denied." ));
+      
+    }
+
+    // Check if the user has permission to update the call
+    await updateCallSchema.validate(req.body, { abortEarly: false });
+
+    // Caller can only update calls assigned to them
+    if (req.body.status) {
+      // Update status
+      if (
+        req.body.comment &&
+        req.body.comment.toLowerCase().includes("foreigner")
+      ) {
+        // If comment contains "foreigner", update status to "FOREIGNER"
+        call.status = "FOREIGNER";
+      } else {
+        call.status = req.body.status;
+      }
+    }
+
+    if (req.body.comment) {
+      // Update comment
+      call.comment = req.body.comment;
+    }
+
+    await call.save();
+    res.status(201).json(failedResponse(201,true,"Call successfully updated"));
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+    
+      return res
+        .status(400)
+        .json(
+          failedResponse(400, false, "Validation failed", validationErrors,error.errors)
+        );
+    }
+
+    // Handle other errors...
+    res
+      .status(500)
+      .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };

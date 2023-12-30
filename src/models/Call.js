@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const shortid = require('shortid');
 
 const statuses = [
   "REGISTERED",
@@ -18,7 +19,8 @@ const callSchema = new mongoose.Schema(
     id: {
       type: String,
       required: true,
-      unique:true
+      unique:true,
+      default: shortid.generate
     },
     slotName: {
       type: String,

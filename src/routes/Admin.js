@@ -3,7 +3,7 @@ const { createEmployee, fetchEmployees, fetchEmployeeById, updateEmployee, delet
 const upload = require("../middlewares/upload");
 const { verifyAdmin } = require("../middlewares/Auth");
 const { createSubAdmin, getSubAdmins, getSubAdminById, updateSubAdmin, deleteSubAdmin } = require("../controllers/SubAdmin");
-const { createCallData, ExcelSheetCallDataUpload, fetchSlotWiseCallData, fetchEmployeeWiseData, assignCalls, migrateCalls, migratePendingCalls } = require("../controllers/Call");
+const { createCallData, ExcelSheetCallDataUpload, fetchSlotWiseCallData, fetchEmployeeWiseData, assignCalls, migrateCalls, migratePendingCalls, updateStatusAndComment } = require("../controllers/Call");
 const multer = require("multer");
 const upload1 = multer({ dest: 'uploads/' });
 const route = express.Router();
@@ -23,7 +23,7 @@ route.post('/subadmin/create',verifyAdmin, upload.fields([{name:"photo",maxCount
 route.get('/subadmin/fetch',verifyAdmin, getSubAdmins);
 route.get('/subadmin/fetch/:id',verifyAdmin, getSubAdminById);
 route.put('/subadmin/edit/:id',verifyAdmin,upload.fields([{name:"photo",maxCount:1}]), updateSubAdmin);
-route.delete('/subadmin/:id',verifyAdmin, deleteSubAdmin);
+route.delete('/subadmin/delete/:id',verifyAdmin, deleteSubAdmin);
 
 /**----------------------------------------------Call------------------------------- */
 route.post('/call/create',verifyAdmin, createCallData);
@@ -33,6 +33,7 @@ route.get('/call/employee-wise',verifyAdmin,fetchEmployeeWiseData);
 route.post('/call/assign',verifyAdmin, assignCalls);
 route.post('/call/migrate',verifyAdmin, migrateCalls);
 route.post('/call/migrate-pending',verifyAdmin, migratePendingCalls);
+route.put('/call/:callId/update',verifyAdmin, updateStatusAndComment);
 
 
 module.exports = route;
