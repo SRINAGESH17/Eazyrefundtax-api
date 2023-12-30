@@ -1,11 +1,15 @@
 const yup = require("yup");
+const mongoose = require("mongoose");
 const firebase = require("../../config/firebase");
 const {
   checkEmailExistsInAuth,
   checkMobileExistsInAuth,
 } = require("../utils/helperFunc");
 const Employee = require("../models/Employee");
-const { VendorSuccessRegister, EmployeeSuccessRegister } = require("../utils/sendMail");
+const {
+  VendorSuccessRegister,
+  EmployeeSuccessRegister,
+} = require("../utils/sendMail");
 const Caller = require("../models/Caller");
 const Preparer = require("../models/Preparer");
 const Reviewer = require("../models/Reviewer");
@@ -61,6 +65,8 @@ exports.createEmployee = async (req, res) => {
     // Validate request data using Yup schema
     // await createEmployeeSchema.validate(req.body, { abortEarly: false });
 
+    console.log(req.body);
+
     const {
       name,
       mobileNumber,
@@ -76,7 +82,7 @@ exports.createEmployee = async (req, res) => {
     console.log(req.body, "Create employee data received");
 
     // Check if email already exists in Firebase Authentication
-    const isEmailExist = await Employee.find({email});
+    const isEmailExist = await Employee.find({ email });
     const emailExistsInAuth = await checkEmailExistsInAuth(email);
     if (emailExistsInAuth || !_.isEmpty(isEmailExist)) {
       return res
@@ -85,7 +91,7 @@ exports.createEmployee = async (req, res) => {
     }
 
     // Check if mobile number already exists
-    const isMobExist = await Employee.find({mobileNumber});
+    const isMobExist = await Employee.find({ mobileNumber });
     const mobileExistsInAuth = await checkMobileExistsInAuth(mobileNumber);
     if (mobileExistsInAuth || !_.isEmpty(isMobExist)) {
       return res
@@ -197,21 +203,21 @@ exports.createEmployee = async (req, res) => {
 
     await newEmp.save();
 
-    await EmployeeSuccessRegister(email,password,name)
+    await EmployeeSuccessRegister(email, password, name);
 
     return res
       .status(201)
       .json(successResponse(201, true, "Employee created successfully"));
   } catch (error) {
     // Handle Yup validation errors
+
+    console.log(error);
     if (error.name === "ValidationError") {
       console.log(error.errors);
-      
+
       return res
         .status(400)
-        .json(
-          failedResponse(400, false, "Validation failed", error.errors)
-        );
+        .json(failedResponse(400, false, "Validation failed", error.errors));
     }
 
     // Handle other errors...
@@ -224,6 +230,8 @@ exports.createEmployee = async (req, res) => {
 exports.fetchEmployees = async (req, res) => {
   try {
     const { searchKey, page = 1, limit = 10, download } = req.query;
+
+    console.log(page, "page changed");
 
     let pipeline = [];
 
@@ -257,6 +265,7 @@ exports.fetchEmployees = async (req, res) => {
         assignedAdmin: "$assignedAdmin.id", // Assuming assignedAdmin is a reference to sub_admins
       },
     });
+    pipeline.push({ $sort: { created: -1 } });
 
     // Count stage to get the total number of documents
     const countPipeline = [...pipeline];
@@ -273,6 +282,8 @@ exports.fetchEmployees = async (req, res) => {
 
     // Execute the aggregation pipeline
     const limitedData = await Employee.aggregate(pipeline);
+
+    console.log(limitedData.length);
 
     const currentPage = parseInt(page) || 1;
 
@@ -312,7 +323,7 @@ exports.fetchEmployeeById = async (req, res) => {
         error: "Employee not found.",
       });
     }
-
+    console.log(employee, "employee data");
     // Extract specific fields from the employee object
     const {
       name,
@@ -359,7 +370,7 @@ exports.updateEmployee = async (req, res) => {
     }
     let photo = "",
       _IDURL = "";
-    console.log(req.files);
+
     if (!_.isEmpty(req.files)) {
       if (req.files["photo"]?.length > 0) {
         photo = req.files["photo"][0].location;
@@ -385,6 +396,8 @@ exports.updateEmployee = async (req, res) => {
       state,
       zipCode,
     } = req.body;
+
+    console.log(req.body, req.files, "employee updatation details received");
 
     // Find the employee by ID
     const employee = await Employee.findById(id).populate("userRole").exec();
@@ -467,7 +480,7 @@ exports.updateEmployee = async (req, res) => {
     employee.name = name;
     employee.mobileNumber = mobileNumber;
     employee.email = email;
-  //  employee.designation = designation;
+    //  employee.designation = designation;
     employee.state = state;
     employee.zipCode = zipCode;
     employee.identity = {
@@ -475,6 +488,10 @@ exports.updateEmployee = async (req, res) => {
       _IDNumber: identityNumber,
       url: _IDURL || employee.identity.url, // Assuming you want to keep the existing URL
     };
+
+    if (photo) {
+      console.log(photo, "photo received");
+    }
     employee.photo = photo || employee.photo;
 
     // Save the updated employee
@@ -506,10 +523,6 @@ exports.updateEmployee = async (req, res) => {
       .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };
-
-
-
-
 
 const deleteUserRole = async (userId) => {
   // Delete the employee's Firebase Authentication account
@@ -545,30 +558,52 @@ const removeEmployeeReferences = async (employee) => {
   switch (designation) {
     case "Caller":
       await Promise.all([
-        ...designationRef.calls.map((call) => Call.findByIdAndUpdate(call, { currentEmployee: null })),
-        ...designationRef.clients.map((client) => updateClient(client, "caller")),
-        ...designationRef.clientYearlyTaxations.map((data) => updateTaxation(data, "caller")),
-        ...designationRef.clientsDocuments.map((data) => updateDocument(data, "caller")),
-        ...designationRef.taxReturnDocuments.map((data) => updateDocument(data, "caller")),
+        ...designationRef.calls.map((call) =>
+          Call.findByIdAndUpdate(call, { currentEmployee: null })
+        ),
+        ...designationRef.clients.map((client) =>
+          updateClient(client, "caller")
+        ),
+        ...designationRef.clientYearlyTaxations.map((data) =>
+          updateTaxation(data, "caller")
+        ),
+        ...designationRef.clientsDocuments.map((data) =>
+          updateDocument(data, "caller")
+        ),
+        ...designationRef.taxReturnDocuments.map((data) =>
+          updateDocument(data, "caller")
+        ),
       ]);
       break;
 
     case "Preparer":
       await Promise.all([
-        ...designationRef.clients.map((client) => updateClient(client, "preparer")),
-        ...designationRef.clientYearlyTaxations.map((data) => updateTaxation(data, "preparer")),
+        ...designationRef.clients.map((client) =>
+          updateClient(client, "preparer")
+        ),
+        ...designationRef.clientYearlyTaxations.map((data) =>
+          updateTaxation(data, "preparer")
+        ),
       ]);
       break;
     case "Reviewer":
       await Promise.all([
-        ...designationRef.clients.map((client) => updateClient(client, "reviewer")),
-        ...designationRef.clientYearlyTaxations.map((data) => updateTaxation(data, "reviewer")),
+        ...designationRef.clients.map((client) =>
+          updateClient(client, "reviewer")
+        ),
+        ...designationRef.clientYearlyTaxations.map((data) =>
+          updateTaxation(data, "reviewer")
+        ),
       ]);
       break;
     case "Final Drafter":
       await Promise.all([
-        ...designationRef.clients.map((client) => updateClient(client, "finalDrafter")),
-        ...designationRef.clientYearlyTaxations.map((data) => updateTaxation(data, "finalDrafter")),
+        ...designationRef.clients.map((client) =>
+          updateClient(client, "finalDrafter")
+        ),
+        ...designationRef.clientYearlyTaxations.map((data) =>
+          updateTaxation(data, "finalDrafter")
+        ),
       ]);
       break;
 
@@ -584,6 +619,8 @@ const removeEmployeeReferences = async (employee) => {
 exports.deleteEmployee = async (req, res) => {
   try {
     const { id } = req.params;
+
+    console.log(id, "delete user id");
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -609,10 +646,14 @@ exports.deleteEmployee = async (req, res) => {
       removeEmployeeReferences(employee),
     ]);
 
-    return res.status(200).json(successResponse(200, true, "Employee deleted successfully"));
+    return res
+      .status(200)
+      .json(successResponse(200, true, "Employee deleted successfully"));
   } catch (error) {
     console.error("Error deleting employee:", error);
-    res.status(500).json(failedResponse(500, false, "Internal Server Error", error.message));
+    res
+      .status(500)
+      .json(failedResponse(500, false, "Internal Server Error", error.message));
   }
 };
 

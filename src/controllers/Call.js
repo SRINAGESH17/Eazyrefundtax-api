@@ -221,6 +221,8 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
 };
 exports.fetchSlotWiseCallData = async (req, res, next) => {
   try {
+    // const callData = await Call.find()
+
     const callDataBySlot = await Call.aggregate([
       {
         $group: {
@@ -538,6 +540,8 @@ exports.assignCalls = async (req, res) => {
 exports.migrateCalls = async (req, res) => {
   try {
     const { fromCallerId, toCallerId, callType, numberOfCalls } = req.body;
+
+    console.log(req.body, "migrate calls received");
 
     // Validate fromCallerMongoid and toCallerMongoid
     if (

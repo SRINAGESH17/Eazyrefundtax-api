@@ -7,7 +7,7 @@ const empSchema = new mongoose.Schema(
     id: {
       type: String,
       required: true,
-      unique:true
+      unique: true,
     },
 
     name: {
@@ -17,13 +17,13 @@ const empSchema = new mongoose.Schema(
     mobileNumber: {
       type: String,
       required: true,
-      unique:true
+      unique: true,
     },
 
     email: {
       type: String,
       required: true,
-      unique:true
+      unique: true,
     },
     photo: String,
     state: String,
@@ -31,7 +31,7 @@ const empSchema = new mongoose.Schema(
     designation: {
       type: String,
       enum: designations,
-      required:true
+      required: true,
     },
     identity: {
       _IDType: {
@@ -44,27 +44,24 @@ const empSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "inactive"],
       default: "active",
-      required:true
+      required: true,
     },
     userRole: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user_roles",
-      
     },
     assignedAdmin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "sub_admins",
     },
-    designationRef:{
+    designationRef: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "designationModel",
-    
     },
-    designationModel:{
-      type:String,
-     
-    }
-   
+    designationModel: {
+      type: String,
+      enum: ["callers", "preparers", "reviewers", "final_drafters"],
+    },
   },
   { timestamps: true }
 );

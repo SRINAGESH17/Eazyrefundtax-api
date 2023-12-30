@@ -12,14 +12,14 @@ const reviewerSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "clients",
-        unique:true
+       
       },
     ],
     clientYearlyTaxations: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "client_yearly_taxations",
-        unique:true
+        
       },
     ],
   
