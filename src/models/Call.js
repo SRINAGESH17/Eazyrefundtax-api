@@ -29,8 +29,8 @@ const callSchema = new mongoose.Schema(
     },
     caller: {
       name: String,
-      mobileNumber: {type:String,unique:true},
-      email: {type:String,unique:true},
+      mobileNumber: {type:String},
+      email: {type:String},
     },
     comment: String,
     status: {
