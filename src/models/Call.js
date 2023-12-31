@@ -12,6 +12,7 @@ const statuses = [
   "FOREIGNER",
   "INTERESTED",
   "MAILSENT",
+  "PENDING"
 ];
 
 const callSchema = new mongoose.Schema(
@@ -35,6 +36,7 @@ const callSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: statuses,
+      default:"PENDING"
     },
     assignedEmployees: [
       {

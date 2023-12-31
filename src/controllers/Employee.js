@@ -21,7 +21,7 @@ const _ = require("lodash");
 const Call = require("../models/Call");
 const Client = require("../models/Client");
 const SubAdmin = require("../models/SubAdmin");
-const { default: mongoose } = require("mongoose");
+
 
 // Define a Yup schema for request data validation
 const createEmployeeSchema = yup.object().shape({
@@ -375,7 +375,7 @@ exports.updateEmployee = async (req, res) => {
       if (req.files["photo"]?.length > 0) {
         photo = req.files["photo"][0].location;
       }
-      if (req.files["_IDURL"].length > 0) {
+      if (req.files["_IDURL"]?.length > 0) {
         _IDURL = req.files["_IDURL"][0].location;
       }
     }

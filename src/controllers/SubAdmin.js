@@ -187,6 +187,7 @@ exports.updateSubAdmin = async (req, res) => {
 
     // Find the SubAdmin by ID
     const subAdmin = await SubAdmin.findById(id).populate("userRole").exec();
+    
     console.log(subAdmin)
 
     if (!subAdmin) {

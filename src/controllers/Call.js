@@ -6,6 +6,7 @@ const XLSX = require("xlsx");
 const Caller = require("../models/Caller");
 const mongoose = require("mongoose");
 const Employee = require("../models/Employee");
+const _= require('lodash')
 
 const callSchema = yup.object().shape({
   slotName: yup.string().required("Slot name is required"),
@@ -34,7 +35,7 @@ const callSchema = yup.object().shape({
     ),
 });
 const updateCallSchema = yup.object().shape({
-  status: yup.string().oneOf(["REGISTERED", "CALLBACK", "WRONGNUMBER", "NOTINTERESTED", "DUPLICATE", "ALREADYFILED", "FIRST", "FOREIGNER", "INTERESTED", "MAILSENT"]),
+  status: yup.string().oneOf(["REGISTERED", "CALLBACK", "WRONGNUMBER", "NOTINTERESTED", "DUPLICATE", "ALREADYFILED", "FIRST", "FOREIGNER", "INTERESTED", "MAILSENT","PENDING"]),
   comment: yup.string(),
 });
 
@@ -118,7 +119,7 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
     const { slotName } = req.body;
 
     const data = XLSX.utils.sheet_to_json(worksheet);
-    let randomNum = 1;
+ 
 
     const callDataPromises = data.map(async (row, index) => {
       let { email, mobileNumber, name, comment } = row;
@@ -141,14 +142,14 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
         );
 
         // Check for duplicacy in email or mobileNumber
-        const existingCall = await Call.findOne({
+        let existingCall = await Call.findOne({
           $or: [
             { "caller.email": email },
             { "caller.mobileNumber": mobileNumber },
           ],
         });
 
-        if (existingCall) {
+        if (!_.isEmpty(existingCall)) {
           console.log("existing call", existingCall, email, mobileNumber);
           throw {
             row: index,
@@ -158,7 +159,9 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
             response: [index],
           };
         }
+        
 
+        let randomNum="";
         async function getUniqueNumber() {
           randomNum = "CALL" + generateId(6);
 
@@ -173,6 +176,7 @@ exports.ExcelSheetCallDataUpload = async (req, res, next) => {
             throw err;
           }
         }
+        getUniqueNumber()
 
         const newCall = new Call({
           id: randomNum,
@@ -231,7 +235,7 @@ exports.fetchSlotWiseCallData = async (req, res, next) => {
           assignedCalls: {
             $sum: {
               $cond: {
-                if: { $ne: ["$currentEmployee", null] },
+                if: { $ne: [{ $ifNull: ["$currentEmployee", null] }, null] },
                 then: 1,
                 else: 0,
               },
@@ -240,7 +244,7 @@ exports.fetchSlotWiseCallData = async (req, res, next) => {
           unassignedCalls: {
             $sum: {
               $cond: {
-                if: { $eq: ["$currentEmployee", null] },
+                if: { $eq: [{ $ifNull: ["$currentEmployee", null] }, null] },
                 then: 1,
                 else: 0,
               },
@@ -249,6 +253,8 @@ exports.fetchSlotWiseCallData = async (req, res, next) => {
         },
       },
     ]);
+    
+    
 
     if (callDataBySlot.length === 0) {
       return res.status(404).json(failedResponse(404, false, "No Data found"));
@@ -287,35 +293,51 @@ exports.fetchEmployeeWiseData = async (req, res, next) => {
       {
         $unwind: "$employeeDetails",
       },
+     
       {
-        $match: {
-          "employeeDetails.designation": "Caller",
+        $lookup: {
+          from: "calls",
+          localField: "calls",
+          foreignField: "_id",
+          as: "calls",
+        },
+      },
+      {
+        $unwind: "$calls",
+      },
+      {
+        $group: {
+          _id: {
+            employee: "$employee",
+            employeeDetails: "$employeeDetails",
+            status: "$calls.status",
+            slotName: "$calls.slotName",
+          },
+          count: { $sum: 1 },
         },
       },
       {
         $group: {
-          _id: "$employee",
-          totalAssignedCalls: { $sum: { $size: "$calls" } },
+          _id: "$_id.employee",
+          totalAssignedCalls: { $sum: "$count" },
           slotWiseCounts: {
             $push: {
-              slotName: "$calls.slotName",
-              count: { $size: "$calls" },
+              slotName: "$_id.slotName",
+              count: "$count",
             },
           },
           statusWiseCounts: {
-            $push: {
-              status: "$calls.status",
-              count: { $size: "$calls" },
+            $addToSet: {
+              status: "$_id.status",
+              count: "$count",
             },
           },
+          employeeId: { $first: "$_id.employeeDetails.id" },
+          // Assuming "employeeDetails.name" is the correct path, adjust if needed
+          employeeName: { $first: "$_id.employeeDetails.name" },
         },
       },
-      {
-        $project: {
-          employeeId: { $arrayElemAt: ["$employeeDetails.id", 0] },
-          employeeName: { $arrayElemAt: ["$employeeDetails.name", 0] },
-        },
-      },
+      
       {
         $project: {
           _id: 0,
@@ -323,16 +345,27 @@ exports.fetchEmployeeWiseData = async (req, res, next) => {
           employeeName: 1,
           totalAssignedCalls: 1,
           slotWiseCounts: 1,
-          statusWiseCounts: 1,
+          statusWiseCounts:   1,
         },
       },
-      { $skip: skip },
-      { $limit: limit },
+      // { $skip: skip },
+      // { $limit: limit },
     ]);
-
+    
+  
+    
+    
+   const newResult=result.map((data)=>{
+    const updatedStatusCount= mergeCounts(data.statusWiseCounts,"status");
+    const updatedSlotCount= mergeCounts(data.slotWiseCounts,"slotName");
+    data.statusWiseCounts=updatedStatusCount;
+    data.slotWiseCounts=updatedSlotCount;
+    return data;
+   })
+    console.log(result)
     res
       .status(200)
-      .json(successResponse(200, true, "Data Fetched successfully", result));
+      .json(successResponse(200, true, "Data Fetched successfully", newResult));
   } catch (error) {
     res
       .status(500)
@@ -370,12 +403,37 @@ exports.fetchCalls = async (req, res, next) => {
     }
 
     pipeline.push({ $match: matchStage });
+    pipeline.push({
+      $lookup:{
+        from:"callers",
+        localField:"currentEmployee",
+        foreignField:"_id",
+        as:"currentEmployee"
+      }
+    })
+    pipeline.push({
+      $lookup:{
+        from:"employees",
+        localField:"currentEmployee.employee",
+        foreignField:"_id",
+        as:"employee"
+      }
+    })
+    pipeline.push({
+      $addFields: {
+        employeeMobileNumber: { $arrayElemAt: ["$employee.mobileNumber", 0] },
+        employeeName: { $arrayElemAt: ["$employee.name", 0] }
+      }
+    });
+    
 
     // Add other stages for filtering, if needed
 
     // Projection stage to include specific fields
     pipeline.push({
       $project: {
+        employeeMobileNumber:1,
+        employeeName:1,
         callId: "$id",
         callerInfo: "$caller",
         comment: 1,
@@ -454,8 +512,8 @@ exports.deleteCall = async (req, res) => {
 };
 exports.assignCalls = async (req, res) => {
   try {
-    const { callerMongoId, numberOfCalls } = req.body;
-
+    let { callerMongoId, numberOfCalls } = req.body;
+numberOfCalls= parseInt(numberOfCalls)
     // Validate callerMongoId
     if (!mongoose.Types.ObjectId.isValid(callerMongoId)) {
       return res
@@ -539,7 +597,8 @@ exports.assignCalls = async (req, res) => {
 };
 exports.migrateCalls = async (req, res) => {
   try {
-    const { fromCallerId, toCallerId, callType, numberOfCalls } = req.body;
+    let { fromCallerId, toCallerId, callType, numberOfCalls } = req.body;
+    numberOfCalls=parseInt(numberOfCalls)
 
     console.log(req.body, "migrate calls received");
 
@@ -639,7 +698,8 @@ exports.migrateCalls = async (req, res) => {
 };
 exports.migratePendingCalls = async (req, res) => {
   try {
-    const { toCallerId, callType, numberOfCalls } = req.body;
+    let { toCallerId, callType, numberOfCalls } = req.body;
+    numberOfCalls=parseInt(numberOfCalls)
 
     // Validate fromCallerMongoid and toCallerMongoid
     if (
@@ -784,3 +844,23 @@ exports.updateStatusAndComment = async (req, res) => {
       .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };
+
+function mergeCounts(input, key) {
+  const mergedCounts = {};
+
+  input.forEach(({ [key]: keyValue, count }) => {
+    if (mergedCounts[keyValue]) {
+      mergedCounts[keyValue] += count;
+    } else {
+      mergedCounts[keyValue] = count;
+    }
+  });
+
+  const output = Object.entries(mergedCounts).map(([value, count]) => ({
+    [key]: value,
+    count,
+  }));
+
+  return output;
+}
+

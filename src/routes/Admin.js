@@ -3,7 +3,7 @@ const { createEmployee, fetchEmployees, fetchEmployeeById, updateEmployee, delet
 const upload = require("../middlewares/upload");
 const { verifyAdmin } = require("../middlewares/Auth");
 const { createSubAdmin, getSubAdmins, getSubAdminById, updateSubAdmin, deleteSubAdmin } = require("../controllers/SubAdmin");
-const { createCallData, ExcelSheetCallDataUpload, fetchSlotWiseCallData, fetchEmployeeWiseData, assignCalls, migrateCalls, migratePendingCalls, updateStatusAndComment } = require("../controllers/Call");
+const { createCallData, ExcelSheetCallDataUpload, fetchSlotWiseCallData, fetchEmployeeWiseData, assignCalls, migrateCalls, migratePendingCalls, updateStatusAndComment, fetchCalls } = require("../controllers/Call");
 const multer = require("multer");
 const { fetchActiveCallers } = require("../controllers/Caller");
 const upload1 = multer({ dest: "uploads/" });
@@ -49,6 +49,7 @@ route.post('/call/assign',verifyAdmin, assignCalls);
 route.post('/call/migrate',verifyAdmin, migrateCalls);
 route.post('/call/migrate-pending',verifyAdmin, migratePendingCalls);
 route.put('/call/:callId/update',verifyAdmin, updateStatusAndComment);
+route.get("/call/fetch",verifyAdmin,fetchCalls);
 
 
 
