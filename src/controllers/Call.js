@@ -641,13 +641,12 @@ exports.migrateCalls = async (req, res) => {
     // Find calls to transfer
     const callQuery = {
       currentEmployee: fromCaller._id,
+      status:callType
     };
 
-    if (callType === "PENDING") {
-      callQuery.status = { $exists: false };
-    } else {
-      callQuery.status = callType;
-    }
+   
+  
+    
 
     const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
 
@@ -703,7 +702,7 @@ exports.migratePendingCalls = async (req, res) => {
 
     // Validate fromCallerMongoid and toCallerMongoid
     if (
-      !mongoose.Types.ObjectId.isValid(fromCallerId) ||
+    
       !mongoose.Types.ObjectId.isValid(toCallerId)
     ) {
       return res
@@ -735,16 +734,9 @@ exports.migratePendingCalls = async (req, res) => {
         .json(failedResponse(404, false, "Caller not found"));
     }
 
-    // Find calls to transfer
-    const callQuery = {};
+  
 
-    if (callType === "PENDING") {
-      callQuery.status = { $exists: false };
-    } else {
-      callQuery.status = callType;
-    }
-
-    const callsToTransfer = await Call.find(callQuery).limit(numberOfCalls);
+    const callsToTransfer = await Call.find({status:callType}).limit(numberOfCalls);
 
     if (numberOfCalls && callsToTransfer.length < numberOfCalls) {
       return res
