@@ -301,33 +301,39 @@ exports.getSubAdmins = async (req, res) => {
 
     console.log(req.query);
 
-    const query = {};
+    const pipeline = [];
 
-    // Add search query if searchKey is provided
+    // Add match stage for search query if searchKey is provided
     if (searchKey) {
       const searchRegex = new RegExp(searchKey, "i");
-      query.$or = [
-        { name: searchRegex },
-        { email: searchRegex },
-        { mobileNumber: searchRegex },
-        { address: searchRegex },
-      ];
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: searchRegex },
+            { id: searchRegex },
+            { email: searchRegex },
+            { mobileNumber: searchRegex },
+            { address: searchRegex },
+          ],
+        },
+      });
     }
 
-    const totalData = await SubAdmin.countDocuments(query);
-
-    let subAdminsQuery = SubAdmin.find(query);
-
-    // Apply pagination if downloadable is not true
+    // Add pagination stages
     if (Boolean(downloadable?.toLowerCase() !== "true")) {
       const currentPage = parseInt(page, 10) || 1;
       const itemsPerPage = parseInt(limit, 10) || 10;
       const skip = (currentPage - 1) * itemsPerPage;
 
-      subAdminsQuery = subAdminsQuery.skip(skip).limit(itemsPerPage);
+      pipeline.push({ $skip: skip }, { $limit: itemsPerPage });
     }
 
-    const subAdmins = await subAdminsQuery.exec();
+    // Execute aggregation pipeline
+    const subAdmins = await SubAdmin.aggregate(pipeline);
+
+    const totalData = await SubAdmin.countDocuments(pipeline[0]?.["$match"] || {});
+
+    console.log(subAdmins);
 
     return res.status(200).json(
       successResponse(200, true, "Employee Fetched successfully", {
@@ -428,3 +434,18 @@ exports.deleteSubAdmin = async (req, res) => {
       .json(failedResponse(500, false, "Internal Server Error", error));
   }
 };
+
+exports.activeSubAdmins= async (req, res) => {
+  try {
+    const subAdmins = await SubAdmin.find({status:"active"}, { id: 1, name: 1, _id: 1 });
+
+    return res.status(200).json(
+      successResponse(200, true, "SubAdmins Fetched successfully", subAdmins)
+    );
+  } catch (error) {
+    console.error("Error fetching SubAdmins:", error);
+    res
+      .status(500)
+      .json(failedResponse(500, false, "Internal Server Error", error));
+  }
+}

@@ -56,7 +56,7 @@ const empSchema = new mongoose.Schema(
     },
     designationRef: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "designationModel",
+      refPath: "designationModel",
     },
     designationModel: {
       type: String,

@@ -1,8 +1,8 @@
 const express = require("express");
-const { createEmployee, fetchEmployees, fetchEmployeeById, updateEmployee, deleteEmployee } = require("../controllers/Employee");
+const { createEmployee, fetchEmployees, fetchEmployeeById, updateEmployee, deleteEmployee, assignEmployeeToSubAdmin } = require("../controllers/Employee");
 const upload = require("../middlewares/upload");
 const { verifyAdmin } = require("../middlewares/Auth");
-const { createSubAdmin, getSubAdmins, getSubAdminById, updateSubAdmin, deleteSubAdmin } = require("../controllers/SubAdmin");
+const { createSubAdmin, getSubAdmins, getSubAdminById, updateSubAdmin, deleteSubAdmin, activeSubAdmins } = require("../controllers/SubAdmin");
 const { createCallData, ExcelSheetCallDataUpload, fetchSlotWiseCallData, fetchEmployeeWiseData, assignCalls, migrateCalls, migratePendingCalls, updateStatusAndComment, fetchCalls } = require("../controllers/Call");
 const multer = require("multer");
 const { fetchActiveCallers } = require("../controllers/Caller");
@@ -32,10 +32,12 @@ route.put(
   updateEmployee
 );
 route.delete("/employee/:id", verifyAdmin, deleteEmployee);
+route.post("/employee/assign-subadmin", verifyAdmin, assignEmployeeToSubAdmin);
 
 /**--------------------------------Sub Admin---------------------------------- */
 route.post('/subadmin/create',verifyAdmin, upload.fields([{name:"photo",maxCount:1}]), createSubAdmin);
 route.get('/subadmin/fetch',verifyAdmin, getSubAdmins);
+route.get('/subadmin/active',verifyAdmin, activeSubAdmins);
 route.get('/subadmin/fetch/:id',verifyAdmin, getSubAdminById);
 route.put('/subadmin/edit/:id',verifyAdmin,upload.fields([{name:"photo",maxCount:1}]), updateSubAdmin);
 route.delete('/subadmin/delete/:id',verifyAdmin, deleteSubAdmin);
