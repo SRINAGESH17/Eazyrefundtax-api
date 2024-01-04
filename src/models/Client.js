@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const designations = ["Caller", "Preparer", "Reviewer", "Final Drafter"];
+
 
 const clientSchema = new mongoose.Schema(
   {
@@ -17,6 +17,10 @@ const clientSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique:true
+    },
+    whatsappNumber: {
+      type: String,
+  
     },
 
     email: {
@@ -56,6 +60,15 @@ const clientSchema = new mongoose.Schema(
     referredBy:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "user_roles",
+    },
+    userRole: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user_roles",
+    },
+    premimum:{
+      type:Boolean,
+      default:false,
+      required:true
     }
   },
   { timestamps: true }

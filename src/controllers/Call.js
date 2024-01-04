@@ -376,7 +376,7 @@ exports.fetchEmployeeWiseData = async (req, res, next) => {
 };
 exports.fetchCalls = async (req, res, next) => {
   try {
-    const { searchKey, status, page = 1, limit = 10 } = req.query;
+    const { searchKey, status,slot, page = 1, limit = 10 } = req.query;
     const { role, callerId } = req.userRole;
 
     let pipeline = [];
@@ -400,6 +400,9 @@ exports.fetchCalls = async (req, res, next) => {
 
     if (status) {
       matchStage.status = { $regex: new RegExp(status, "i") };
+    }
+    if (status) {
+      matchStage.slotName = { $regex: new RegExp(slot, "i") };
     }
 
     pipeline.push({ $match: matchStage });
@@ -856,3 +859,73 @@ function mergeCounts(input, key) {
   return output;
 }
 
+/**--------------------------------------fetch caller's assigned calls------------------------------ */
+exports.callStats = async (req, res) => {
+  try {
+    const {role,callerId} = req.userRole;
+    console.log(callerId)
+
+    // Fetch total count of assigned calls
+    const assignedCallsCount = await Call.countDocuments({ 'currentEmployee.employee': callerId });
+
+    // Fetch total count of uploaded documents
+    const uploadedDocumentsCount = await Caller.findById(callerId)
+      .select(['clientsDocuments', 'taxReturnDocuments'])
+      .then(caller => caller?.clientsDocuments.length + caller?.taxReturnDocuments.length);
+
+    // Fetch total count of pending calls
+    const pendingCallsCount = await Call.countDocuments({  'currentEmployee.employee': callerId ,'status': 'PENDING' });
+
+    // Return the results
+    res.status(200).json(successResponse(200,true,"Successfully fetched stats",{
+      assignedCallsCount,
+      uploadedDocumentsCount,
+      pendingCallsCount
+    }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(failedResponse(500,false,'Internal Server Error' ));
+  }
+};
+
+exports.fetchSlotWiseForCaller = async (req, res) => {
+  try {
+    const {role,callerId}= req.userRole;
+    console.log(callerId,role,"777777777777777777777777777777777")
+    const slotwiseCalls = await Call.aggregate([
+      {
+$match:{
+  currentEmployee:callerId
+}
+    },
+      {
+        $group: {
+          _id: '$slotName',
+          totalCalls: { $sum: 1 },
+          pendingCalls: {
+            $sum: { $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0] },
+          },
+          completedCalls: {
+            $sum: { $cond: [{ $ne: ['$status', 'PENDING'] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          slotName: '$_id',
+          totalCalls: 1,
+          pendingCalls: 1,
+          completedCalls: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    return res.status(200).json(successResponse(200,true,"Successfully data fetched", slotwiseCalls));
+  } catch (error) {
+    console.error('Error fetching slotwise calls:', error);
+    res.status(500).json(failedResponse(500,false,
+    'Internal Server Error'
+    ));
+  }
+}

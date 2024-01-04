@@ -10,6 +10,18 @@ const documentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "clients",
     },
+    status:{
+      type:String,
+      enum:["PENDING","PREPARED","REVIEWED","FILED"],
+      default:"PENDING",
+      required:true
+    },
+    paymentStatus:{
+      type:String,
+      enum:["PENDING","PAID"],
+      default:"PENDING",
+      required:true
+    },
     clientDocuments: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -38,6 +50,11 @@ const documentSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "final_drafers",
     },
+    taxSummaries:[
+      {
+        type:Object
+      }
+    ]
 
   },
   { timestamps: true }

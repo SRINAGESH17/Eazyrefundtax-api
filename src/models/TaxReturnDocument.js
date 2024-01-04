@@ -23,20 +23,9 @@ const documentSchema = new mongoose.Schema(
       required: true,
         
     },
-    amount:{
-        type:Number,
-    },
-    documentStatus:{
-      type: String,
-      required: true,
-      default:"Pending",
-      enum:["Pending","Prepared","Reviewed","Filed"]
-    },
-    paymentStatus:{
-      type: String,
-      required: true,
-      default:"Pending"
-    },
+   
+   
+   
     url:{
         type: String,
         required: true,

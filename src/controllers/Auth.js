@@ -9,29 +9,32 @@ const UserRole = require("../models/UserRole");
 
 
 exports.getRole = async (req, res) => {
-  const firebaseId = req.currUser.uid;
+   const firebaseId =req.currUser.uid;
 
   if (_.isEmpty(firebaseId)) {
     return res.status(400).json(failedResponse(400, false, "User not found."));
   }
-  const user = await UserRole.findOne({ firebaseId })
-
-  if (_.isEmpty(user)) {
-    return res.status(400).json(failedResponse(400, false, "User not found."));
-  }
-  const role = user.role;
-
-  const refValue =  role.vendor
-  ? "vendors"
-  : role.customer
-  ? "customers"
-  : role?.admin
-  ? "admins"
-  : role?.employee
-  ? "employees"
-  : "";
 
   try {
+    const user = await UserRole.findOne({ firebaseId});
+    console.log(user)
+
+    if (_.isEmpty(user)) {
+     return res.status(400).json(failedResponse(400, false, "User not found."));
+    }
+
+    const role = user.role;
+
+    const refValue = role.client
+      ? "clients"
+      : role.subAdmin
+      ? "sub_admins"
+      : role?.admin
+      ? "admins"
+      : role?.employee
+      ? "employees"
+      : "";
+
     const pipeline = [
       {
         $match: {
@@ -40,8 +43,8 @@ exports.getRole = async (req, res) => {
       },
       {
         $lookup: {
-          from:refValue,
-          localField: "userId",
+          from: refValue,
+          localField: "userMongoId",
           foreignField: "_id",
           as: "users",
         },
@@ -49,44 +52,64 @@ exports.getRole = async (req, res) => {
       {
         $addFields: {
           userId: {
-            $arrayElemAt: [
-              `$users.${
-                role.vendor
-                  ? "vendorId"
-                  : role.customer
-                  ? "customerId"
-                  : role?.admin
-                  ? "adminId"
-                  : role?.employee
-                  ? "empId"
-                  : ""
-              }`,
-              0
-            ],
+            $arrayElemAt: ["$users.id", 0],
           },
+          designation: {
+            $arrayElemAt: ["$users.designation", 0],
+          },
+          name:{
+            $arrayElemAt: ["$users.name", 0],
+          },
+          email:{
+            $arrayElemAt: ["$users.email", 0],
+          },
+          photo:{
+            $arrayElemAt: ["$users.photo", 0],
+
+          }
         },
-      },{
-        $project:{
-          users:0
-        }
-      }
-      
+      },
+      {
+        $project: {
+          users: 0,
+        },
+      },
     ];
 
-    
     const Role = await UserRole.aggregate(pipeline);
 
     if (_.isEmpty(Role)) {
-      return res
-        .status(400)
-        .json(failedResponse(400, false, "Role not found."));
+      return res.status(400).json(failedResponse(400, false, "Role not found."));
     }
-    console.log("Role-------------------",Role[0]);
+
+    if (role.employee) {
+      let newObj = {};
+      switch (Role[0].designation) {
+        case "Caller":
+          newObj = { caller: true };
+          break;
+        case "Preparer":
+          newObj = { preparer: true };
+          break;
+        case "Reviewer":
+          newObj = { reviewer: true };
+          break;
+        case "Final Drafter":
+          newObj = { finalDrafter: true };
+          break;
+        default:
+          break;
+      }
+      Role[0].role = {...(Role[0].role || []), ...newObj};
+
+    }
+    console.log(Role[0])
 
     return res
       .status(201)
       .json(successResponse(201, true, "Fetch Role successfully", Role[0]));
   } catch (error) {
+    console.log(error)
     res.status(400).json(failedResponse(400, false, "Fetch Role failed"));
   }
 };

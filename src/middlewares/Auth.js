@@ -101,10 +101,24 @@ const verifyAdmin = (req, res, next) => {
     });
   });
 };
+const verifyEmployee = (req, res, next) => {
+  isAuth(req, res, async () => {
+    getUserRole(req, res, async () => {
+      if (req?.userRole?.role?.employee) {
+        next();
+      } else {
+        return res
+          .status(403)
+          .json(failedResponse(403, false, "you are not authorized User", {}));
+      }
+    });
+  });
+};
 const verifyCaller = (req, res, next) => {
   isAuth(req, res, async () => {
     getUserRole(req, res, async () => {
-      const caller = await Caller.find({employee:req.userRole.userMongoId})
+      const caller = await Caller.findOne({employee:req.userRole.userMongoId})
+      console.log(caller,"88888888")
       if (req?.userRole?.role?.employee && !_.isEmpty(caller)) {
         req.userRole.callerId = caller._id
         next();
@@ -117,4 +131,4 @@ const verifyCaller = (req, res, next) => {
   });
 };
 
-module.exports = { isAuth, getUserRole, verifyAdmin,verifyCaller };
+module.exports = { isAuth, getUserRole, verifyAdmin,verifyCaller,verifyEmployee };

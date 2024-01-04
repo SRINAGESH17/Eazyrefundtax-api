@@ -306,7 +306,14 @@ exports.fetchEmployees = async (req, res) => {
 
 exports.fetchEmployeeById = async (req, res) => {
   try {
-    const employeeId = req.params.id;
+    const {role,userMongoId}= req.userRole;
+    let employeeId;
+    if (role.employee) {
+      employeeId=userMongoId;
+    } else {
+       employeeId = req.params.id;
+      
+    }
 
     if (!employeeId) {
       return res.status(400).json({
@@ -360,7 +367,14 @@ exports.fetchEmployeeById = async (req, res) => {
 
 exports.updateEmployee = async (req, res) => {
   try {
-    const { id } = req.params;
+    const {role,userMongoId}=req.userRole;
+    let id;
+    if (role.employee) {
+      id= userMongoId;
+    } else {
+        id  = req.params.id;
+      
+    }
 
     if (!id) {
       return res.status(400).json({

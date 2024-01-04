@@ -89,10 +89,48 @@ const SubAdminSuccessRegister = async (to, pass, name) => {
   });
 };
 
+const ClientSuccessRegister = async (to, pass, name) => {
+  console.log(to, pass, name, "---------");
+
+  const receivers = [
+    {
+      email: to,
+    },
+  ];
+
+  await tranEmailApi.sendTransacEmail({
+    sender,
+    to: receivers,
+    subject: 'Welcome to EazyRefundTax - Successful Client Registration!',
+    htmlContent: `<div style="color:black">
+        <p>Dear ${name},</p>
+
+        <p>Congratulations and welcome to EazyRefundTax! We are thrilled to have you as a client in our organization. Your registration process has been successfully completed, and we look forward to assisting you with your tax-related needs.</p>
+
+        <p>Here are your login credentials:</p>
+
+        <p>Email: ${to}<br/>
+        Password: ${pass}</p>
+
+        <p>Please ensure the confidentiality of these credentials, as they are vital for accessing and managing your client account. If you happen to forget your password, you can use the "Forgot Password" option on our login page to reset it.</p>
+
+        <p>As a client, you can use our platform to upload documents, track the status of your tax returns, and communicate with our support team. We are committed to providing you with a seamless and efficient experience throughout the tax season.</p>
+
+        <p>Feel free to explore our platform and reach out to our support team if you have any questions or need assistance. You can find the contact details at the end of this email.</p>
+
+        <p>Once again, welcome to EazyRefundTax! We're excited to have you on board, and we look forward to helping you achieve your tax-related goals.</p>
+
+        <p>Best regards,<br/>
+        EazyRefundTax Team</p>
+      </div>`,
+  });
+};
 
 
 
 
 
 
-module.exports = {EmployeeSuccessRegister, SubAdminSuccessRegister}
+
+
+module.exports = {EmployeeSuccessRegister, SubAdminSuccessRegister,ClientSuccessRegister}

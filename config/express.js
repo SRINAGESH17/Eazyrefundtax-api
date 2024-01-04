@@ -5,6 +5,8 @@ const cors = require('cors');
 require('dotenv').config();
 const AuthRoute = require('../src/routes/Auth');
 const AdminRoute = require('../src/routes/Admin');
+const CallerRoute = require('../src/routes/Caller');
+const EmployeeRoute = require('../src/routes/Employee');
 
 
 const app = express();
@@ -22,6 +24,8 @@ app.get('/', (req, res) => {
 
 app.use('/api/v1/auth',AuthRoute);
 app.use('/api/v1/admin',AdminRoute);
+app.use('/api/v1/caller',CallerRoute);
+app.use('/api/v1/employee',EmployeeRoute);
 
 
 
