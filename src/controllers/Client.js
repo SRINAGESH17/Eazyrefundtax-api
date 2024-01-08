@@ -53,6 +53,8 @@ exports.createClient = async (req, res) => {
       referralId,
     } = req.body;
 
+    console.log(req.body, "registration details received");
+
     let referredBy, caller,call;
 
     if (referrenceType === "CallId") {
@@ -167,6 +169,7 @@ exports.createClient = async (req, res) => {
       .status(201)
       .json(successResponse(201, true, "Client created successfully"));
   } catch (error) {
+    console.log(error)
     if (error.name === "ValidationError") {
       return res.status(400).json(failedResponse(400, false, error.message));
     }

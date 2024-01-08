@@ -55,7 +55,7 @@ exports.fetchClientTaxations = async (req, res) => {
             { $limit: limit },
             {
               $project: {
-                clientId: "$clientDetails._id",
+                clientId: "$clientDetails.id",
                 clientName: "$clientDetails.name",
                 clientMobileNumber: "$clientDetails.mobileNumber",
                 clientEmail: "$clientDetails.email",
