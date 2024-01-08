@@ -14,9 +14,9 @@ exports.fetchClientTaxations= async (req, res) => {
       // Define aggregation pipeline stages
       const pipeline = [
         {
-            $match:{
-                caller:callerId
-            }
+          $match: {
+            caller: callerId,
+          },
         },
         {
           $lookup: {
@@ -29,16 +29,19 @@ exports.fetchClientTaxations= async (req, res) => {
         {
           $unwind: "$clientDetails",
         },
-       
-        
+
         {
           $match: {
             $or: [
               { "clientDetails.id": { $regex: searchKey, $options: "i" } },
               { "clientDetails.name": { $regex: searchKey, $options: "i" } },
-              { "clientDetails.mobileNumber": { $regex: searchKey, $options: "i" } },
+              {
+                "clientDetails.mobileNumber": {
+                  $regex: searchKey,
+                  $options: "i",
+                },
+              },
               { "clientDetails.email": { $regex: searchKey, $options: "i" } },
-             
             ],
           },
         },
@@ -46,17 +49,17 @@ exports.fetchClientTaxations= async (req, res) => {
           $facet: {
             totalData: [{ $count: "count" }],
             limitedData: [
-              { $skip: (page - 1) * pageSize },
+              { $skip: (page - 1) * limit },
               { $limit: limit },
               {
                 $project: {
-                  clientId: "$clientDetails._id",
+                  clientId: "$clientDetails.id",
                   clientName: "$clientDetails.name",
                   clientMobileNumber: "$clientDetails.mobileNumber",
                   clientEmail: "$clientDetails.email",
                   clientCreatedAt: "$clientDetails.createdAt",
                   preparer: 1,
-                  taxYear:1
+                  taxYear: 1,
                 },
               },
             ],
