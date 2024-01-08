@@ -461,6 +461,7 @@ exports.fetchCalls = async (req, res, next) => {
 
     // Execute the aggregation pipeline
     const limitedData = await Call.aggregate(pipeline);
+    console.log(limitedData)
 
     const currentPage = parseInt(page) || 1;
 
@@ -785,16 +786,19 @@ exports.migratePendingCalls = async (req, res) => {
 exports.updateStatusAndComment = async (req, res) => {
   try {
     const { role, callerId } = req.userRole;
+    
     const callId = req.params.callId;
+    
 
     let call = await Call.findById(callId);
+  
 
     if (!call) {
       return res.status(404).json({ message: "Call not found" });
     }
 
 
-    if (role.employee && call.currentEmployee !== callerId ) {
+    if (role.employee && call.currentEmployee.toString() !== callerId.toString() ) {
       return res.status(403).json(failedResponse(403,false,"Access denied." ));
       
     }
@@ -824,6 +828,7 @@ exports.updateStatusAndComment = async (req, res) => {
     await call.save();
     res.status(201).json(failedResponse(201,true,"Call successfully updated"));
   } catch (error) {
+    console.log(error)
     if (error instanceof yup.ValidationError) {
     
       return res
@@ -866,7 +871,7 @@ exports.callStats = async (req, res) => {
     console.log(callerId)
 
     // Fetch total count of assigned calls
-    const assignedCallsCount = await Call.countDocuments({ 'currentEmployee.employee': callerId });
+    const assignedCallsCount = await Call.countDocuments({ currentEmployee: callerId });
 
     // Fetch total count of uploaded documents
     const uploadedDocumentsCount = await Caller.findById(callerId)
@@ -874,7 +879,7 @@ exports.callStats = async (req, res) => {
       .then(caller => caller?.clientsDocuments.length + caller?.taxReturnDocuments.length);
 
     // Fetch total count of pending calls
-    const pendingCallsCount = await Call.countDocuments({  'currentEmployee.employee': callerId ,'status': 'PENDING' });
+    const pendingCallsCount = await Call.countDocuments({  currentEmployee: callerId ,status: 'PENDING' });
 
     // Return the results
     res.status(200).json(successResponse(200,true,"Successfully fetched stats",{
@@ -929,3 +934,13 @@ $match:{
     ));
   }
 }
+
+exports.fetchSlotNames = async (req, res) => {
+  try {
+    const slotNames = await Call.distinct('slotName');
+    console.log(slotNames)
+    res.status(200).json(successResponse(200,true,"Successfully fetched data",slotNames ));
+  } catch (error) {
+
+    res.status(500).json(failedResponse(500,false,'Internal Server Error'));
+  }}

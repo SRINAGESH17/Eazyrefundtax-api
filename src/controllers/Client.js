@@ -1,6 +1,7 @@
 const Admin = require("../models/Admin");
 const Caller = require("../models/Caller");
 const Client = require("../models/Client");
+const Call = require("../models/Call");
 const ClientYearlyTaxation = require("../models/ClientYearlyTaxation");
 const UserRole = require("../models/UserRole");
 const generateId = require("../utils/genRandomId");
@@ -8,7 +9,12 @@ const {
   checkEmailExistsInAuth,
   checkMobileExistsInAuth,
 } = require("../utils/helperFunc");
+const { failedResponse } = require("../utils/message");
 const { ClientSuccessRegister } = require("../utils/sendMail");
+const yup= require('yup');
+const firebase = require('../../config/firebase');
+const moment = require('moment')
+
 
 const clientSchema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -45,13 +51,13 @@ exports.createClient = async (req, res) => {
       referrenceType,
       callId,
       referralId,
-    } = await clientSchema.validate(req.body);
+    } = req.body;
 
-    let referredBy, caller;
+    let referredBy, caller,call;
 
     if (referrenceType === "CallId") {
-      await Call.findByIdAndUpdate(callId, { status: "REGISTERED" });
-      const callData = await Call.findById(callId).select("currentEmployee");
+      call=await Call.findOneAndUpdate({id:callId}, { status: "REGISTERED" });
+      const callData = await Call.findOne({id:callId}).select("currentEmployee");
       if (callData && callData.currentEmployee) {
         referredBy = callData.currentEmployee;
         caller = callData.currentEmployee;
@@ -107,7 +113,7 @@ exports.createClient = async (req, res) => {
       email,
       password,
       referredBy,
-      callId,
+      callId:call._id,
       caller,
     });
 

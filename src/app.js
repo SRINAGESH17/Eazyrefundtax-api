@@ -1,9 +1,10 @@
 // app.js
 
-
 const config = require('../config');
 const db= require('../config/database');
 const app = require('../config/express');
+const { fetchSlotNames } = require('./controllers/Call');
+
 
 const port = config.server.port || 4000;
 
