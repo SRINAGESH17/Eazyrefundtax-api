@@ -6,6 +6,9 @@ const { createSubAdmin, getSubAdmins, getSubAdminById, updateSubAdmin, deleteSub
 const { createCallData, ExcelSheetCallDataUpload, fetchSlotWiseCallData, fetchEmployeeWiseData, assignCalls, migrateCalls, migratePendingCalls, updateStatusAndComment, fetchCalls } = require("../controllers/Call");
 const multer = require("multer");
 const { fetchActiveCallers } = require("../controllers/Caller");
+const { addTaxYear, getTaxYears } = require("../controllers/TaxYear");
+const { addTaxDocument, getTaxDocuments } = require("../controllers/TaxDocument");
+const { addTaxReturnDocument, getTaxReturnDocuments } = require("../controllers/TaxReturnDocument");
 const upload1 = multer({ dest: "uploads/" });
 const route = express.Router();
 
@@ -58,6 +61,15 @@ route.get("/call/fetch",verifyAdmin,fetchCalls);
 /**-------------------------------------------Caller --------------------------------- */
 
 route.get("/caller/active", verifyAdmin, fetchActiveCallers);
+
+
+/**------------------------------------------Tax module-------------------------------------- */
+route.post("/tax-year/add",verifyAdmin,addTaxYear);
+route.get("/tax-year/fetch",verifyAdmin,getTaxYears);
+route.post("/tax-doc-type/add",verifyAdmin,addTaxDocument);
+route.get("/tax-doc-type/fetch",verifyAdmin,getTaxDocuments);
+route.post("/tax-return-doc-type/add",verifyAdmin,addTaxReturnDocument);
+route.get("/tax-return-doc-type/fetch",verifyAdmin,getTaxReturnDocuments);
 
 
 
