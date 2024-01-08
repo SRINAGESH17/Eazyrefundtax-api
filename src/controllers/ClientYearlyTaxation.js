@@ -157,28 +157,31 @@ exports.assignPreparer = async (req, res) => {
 
 exports.fetchClientTaxationById = async (req, res) => {
   try {
-    const clientYearlyTaxationId = req.params.id;
-    const callerId = req.userRole?.callerId; // Assuming callerId is present in the userRole
+    const {clientYearlyTaxationId} = req.params;
+    // Assuming callerId is present in the userRoleu
+    const {role,callerId}=req.userRole
+    console.log(role)
 
     // Check if the caller has the necessary permissions to access client yearly taxation
-    if (!mongoose.Types.ObjectId.isValid(clientYearlyTaxationDetails)) {
+    if (!mongoose.Types.ObjectId.isValid(clientYearlyTaxationId)) {
       return res
         .status(400)
         .json(
           failedResponse(
             400,
             false,
-            "Caller does not have permission to access client yearly taxation."
+            "Invalid id."
           )
         );
     }
-    const taxData = await ClientYearlyTaxation.findById(callerId);
+    const taxData = await ClientYearlyTaxation.findById(clientYearlyTaxationId);
     if (!taxData) {
       return res
         .status(404)
         .json(failedResponse(404, false, "This id doesn't exist."));
     }
-    if (role.caller && taxData.caller !== callerId) {
+    console.log(taxData)
+    if (role.caller && taxData.caller.toString() !== callerId.toString()) {
       return res
         .status(403)
         .json(
@@ -193,7 +196,7 @@ exports.fetchClientTaxationById = async (req, res) => {
     // Use aggregation to fetch the required details
     const clientYearlyTaxationDetails = await ClientYearlyTaxation.aggregate([
       {
-        $match: { _id: mongoose.Types.ObjectId(clientYearlyTaxationId) },
+        $match: { _id:new mongoose.Types.ObjectId(clientYearlyTaxationId) },
       },
       {
         $lookup: {

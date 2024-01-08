@@ -77,8 +77,11 @@ const getUserRole = async (req, res, next) => {
         .status(400)
         .json(failedResponse(400, false, "Role not found."));
     }
+// Convert Mongoose document to a plain JavaScript object
+const roleObject = Role.toObject();
+console.log(roleObject,"idiieiieiieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
 
-    req.userRole = Role;
+    req.userRole = roleObject;
 
     next();
   } catch (error) {
@@ -120,7 +123,7 @@ const verifyCaller = (req, res, next) => {
       const caller = await Caller.findOne({employee:req.userRole.userMongoId})
       console.log(caller,"88888888")
       if (req?.userRole?.role?.employee && !_.isEmpty(caller)) {
-        req.userRole.role.push({caller:true});
+        req.userRole.role.caller = true;
         req.userRole.callerId = caller._id
         next();
       } else {
