@@ -33,7 +33,7 @@ const documentSchema = new mongoose.Schema(
     uploadedBy:{
         refId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:refModel
+        refPath:"refModel"
         },
         refModel:String
     },

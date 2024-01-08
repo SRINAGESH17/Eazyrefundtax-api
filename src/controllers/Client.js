@@ -9,7 +9,7 @@ const {
   checkEmailExistsInAuth,
   checkMobileExistsInAuth,
 } = require("../utils/helperFunc");
-const { failedResponse } = require("../utils/message");
+const { failedResponse, successResponse } = require("../utils/message");
 const { ClientSuccessRegister } = require("../utils/sendMail");
 const yup= require('yup');
 const firebase = require('../../config/firebase');
@@ -190,3 +190,54 @@ async function getUniqueNumber() {
     throw err;
   }
 }
+
+exports.getActiveClientYearlyTaxations = async (req, res) => {
+  try {
+    const { searchKey } = req.query;
+
+    const aggregationPipeline = [
+    
+      {
+        $lookup: {
+          from: 'clients',
+          localField: 'client',
+          foreignField: '_id',
+          as: 'clientInfo',
+        },
+      },
+      {
+        $unwind: '$clientInfo',
+      },
+      {
+        $project: {
+          _id: 1,
+          clientId: '$clientInfo.id',
+          clientName: '$clientInfo.name',
+          clientEmail: '$clientInfo.email',
+          
+        },
+      },
+    ];
+    if (searchKey) {
+      aggregationPipeline.push(  {
+        $match: {
+          $or: [
+            { 'clientInfo.id': { $regex: searchKey, $options: 'i' } },
+            { 'clientInfo.email': { $regex: searchKey, $options: 'i' } },
+            { 'clientInfo.name': { $regex: searchKey, $options: 'i' } },
+          ],
+        },
+      },)
+    }
+
+    const taxations = await ClientYearlyTaxation.aggregate(aggregationPipeline);
+
+    return res.status(200).json(successResponse(200,true,"Successfully data fetched",taxations));
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json(failedResponse(500, false, 'Internal Server Error', error));
+  }
+};
+

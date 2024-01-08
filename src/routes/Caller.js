@@ -3,7 +3,9 @@ const { verifyAdmin, verifyCaller } = require("../middlewares/Auth");
 
 const { fetchCalls, updateStatusAndComment, callStats, fetchSlotWiseForCaller } = require("../controllers/Call");
 const multer = require("multer");
-const { fetchClientTaxations, assignPreparer } = require("../controllers/ClientYearlyTaxation");
+const { fetchClientTaxations, assignPreparer, fetchClientTaxationById } = require("../controllers/ClientYearlyTaxation");
+const { uploadedDocument, getCombinedDocuments } = require("../controllers/Document");
+const upload = require("../middlewares/upload");
 const route = express.Router();
 
 
@@ -17,7 +19,12 @@ route.get('/call/slotwise-calls',verifyCaller, fetchSlotWiseForCaller);
 
 /**--------------------------------------Client taxations------------------------ */
 route.get('/client-yearly-taxations/fetch',verifyCaller,fetchClientTaxations);
+route.get('/client-yearly-taxations/:clientYearlyTaxationId/fetch',verifyCaller,fetchClientTaxationById);
 route.put('/client-yearly-taxations/:clientYearlyTaxationId/assign-preparer',verifyCaller,assignPreparer);
+
+/**-------------------------------------Documents-------------------------------------- */
+route.post('/document/upload/:clientYearlyTaxId',verifyCaller,upload.single('doc'),uploadedDocument);
+route.get('/document/fetch',verifyCaller,getCombinedDocuments);
 
 
 
