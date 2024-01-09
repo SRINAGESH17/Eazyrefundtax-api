@@ -4,6 +4,7 @@ var _ = require("lodash");
 const { failedResponse } = require("../utils/message");
 const UserRole = require("../models/UserRole");
 const Caller = require("../models/Caller");
+const Preparer = require("../models/Preparer");
 
 const getAuthToken = (req, res, next) => {
   if (
@@ -134,5 +135,22 @@ const verifyCaller = (req, res, next) => {
     });
   });
 };
+const verifyPreparer = (req, res, next) => {
+  isAuth(req, res, async () => {
+    getUserRole(req, res, async () => {
+      const preparer = await Preparer.findOne({employee:req.userRole.userMongoId})
+     
+      if (req?.userRole?.role?.employee && !_.isEmpty(preparer)) {
+        req.userRole.role.preparer = true;
+        req.userRole.preparerId = preparer._id
+        next();
+      } else {
+        return res
+          .status(403)
+          .json(failedResponse(403, false, "you are not authorized User", {}));
+      }
+    });
+  });
+};
 
-module.exports = { isAuth, getUserRole, verifyAdmin,verifyCaller,verifyEmployee };
+module.exports = { isAuth, getUserRole, verifyAdmin,verifyCaller,verifyEmployee,verifyPreparer };

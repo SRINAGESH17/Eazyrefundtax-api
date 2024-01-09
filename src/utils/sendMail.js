@@ -1,15 +1,15 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const Sib = require('sib-api-v3-sdk');
+const Sib = require("sib-api-v3-sdk");
 const client = Sib.ApiClient.instance;
-const apiKey = client.authentications['api-key'];
+const apiKey = client.authentications["api-key"];
 
 apiKey.apiKey = process.env.SENDINBLUE_API_KEY;
 
-const tranEmailApi = new Sib.TransactionalEmailsApi()
+const tranEmailApi = new Sib.TransactionalEmailsApi();
 const sender = {
   email: process.env.EMAIL_ADD,
-  name: 'Eazy Refund',
+  name: "Eazy Refund",
 };
 
 const EmployeeSuccessRegister = async (to, pass, name) => {
@@ -24,7 +24,7 @@ const EmployeeSuccessRegister = async (to, pass, name) => {
   await tranEmailApi.sendTransacEmail({
     sender,
     to: receivers,
-    subject: 'Welcome to EazyRefundTax - Successful Employee Registration!',
+    subject: "Welcome to EazyRefundTax - Successful Employee Registration!",
     htmlContent: `<div style="color:black">
         <p>Dear ${name},</p>
 
@@ -48,10 +48,6 @@ const EmployeeSuccessRegister = async (to, pass, name) => {
       </div>`,
   });
 };
-
-
-
-
 const SubAdminSuccessRegister = async (to, pass, name) => {
   console.log(to, pass, name, "---------");
 
@@ -64,7 +60,7 @@ const SubAdminSuccessRegister = async (to, pass, name) => {
   await tranEmailApi.sendTransacEmail({
     sender,
     to: receivers,
-    subject: 'Welcome to EazyRefundTax - Successful Sub-Admin Registration!',
+    subject: "Welcome to EazyRefundTax - Successful Sub-Admin Registration!",
     htmlContent: `<div style="color:black">
         <p>Dear ${name},</p>
 
@@ -88,7 +84,6 @@ const SubAdminSuccessRegister = async (to, pass, name) => {
       </div>`,
   });
 };
-
 const ClientSuccessRegister = async (to, pass, name) => {
   console.log(to, pass, name, "---------");
 
@@ -101,7 +96,7 @@ const ClientSuccessRegister = async (to, pass, name) => {
   await tranEmailApi.sendTransacEmail({
     sender,
     to: receivers,
-    subject: 'Welcome to EazyRefundTax - Successful Client Registration!',
+    subject: "Welcome to EazyRefundTax - Successful Client Registration!",
     htmlContent: `<div style="color:black">
         <p>Dear ${name},</p>
 
@@ -125,12 +120,38 @@ const ClientSuccessRegister = async (to, pass, name) => {
       </div>`,
   });
 };
+const ClientTaxEmail = async (to, name, subject, content, attachments) => {
+  console.log(to, pass, name, "---------");
 
+  const receivers = [
+    {
+      email: to,
+    },
+  ];
 
+  await tranEmailApi.sendTransacEmail({
+    sender,
+    to: receivers,
+    subject,
+    htmlContent: `<div style="color:black">
+        <p>Dear ${name},</p>
 
+     
 
+     
 
+       <p>${content}</p>
 
+        <p>Best regards,<br/>
+        EazyRefundTax Team</p>
+      </div>`,
+    attachment,
+  });
+};
 
-
-module.exports = {EmployeeSuccessRegister, SubAdminSuccessRegister,ClientSuccessRegister}
+module.exports = {
+  EmployeeSuccessRegister,
+  SubAdminSuccessRegister,
+  ClientSuccessRegister,
+  ClientTaxEmail
+};
