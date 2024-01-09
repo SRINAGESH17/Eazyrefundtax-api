@@ -64,3 +64,19 @@ exports.addTaxYear = async (req, res) => {
     }
   };
   
+  exports.getActiveYears = async (req, res) => {
+    try {
+      
+      const taxDocs = await TaxYear.find().select("year")
+  
+      return res.status(200).json(successResponse(200,true,taxDocs)
+      );
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json(failedResponse(500, false, 'Internal Server Error', error));
+    }
+  };
+
+  

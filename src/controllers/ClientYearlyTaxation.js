@@ -10,11 +10,20 @@ exports.fetchClientTaxations = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const searchKey = req.query.searchKey || "";
+    const status = req.query.status || "";
     const pipeline = [];
     if (role.caller) {
       pipeline.push({
         $match: {
           caller: callerId,
+        },
+      });
+    }
+
+    if(role.preparer){
+      pipeline.push({
+        $match: {
+          preparer: req.userRole.preparerId,
         },
       });
     }
@@ -32,21 +41,7 @@ exports.fetchClientTaxations = async (req, res) => {
         $unwind: "$clientDetails",
       },
 
-      {
-        $match: {
-          $or: [
-            { "clientDetails.id": { $regex: searchKey, $options: "i" } },
-            { "clientDetails.name": { $regex: searchKey, $options: "i" } },
-            {
-              "clientDetails.mobileNumber": {
-                $regex: searchKey,
-                $options: "i",
-              },
-            },
-            { "clientDetails.email": { $regex: searchKey, $options: "i" } },
-          ],
-        },
-      },
+     
       {
         $facet: {
           totalData: [{ $count: "count" }],
@@ -62,7 +57,8 @@ exports.fetchClientTaxations = async (req, res) => {
                 clientCreatedAt: "$clientDetails.createdAt",
                 state: "$clientDetails.state",
                 zipCode: "$clientDetails.zipCode",
-
+                ...(role.preparer?{status:1}:{}),
+                reviewer:1,
                 preparer: 1,
                 taxYear: 1,
               },
@@ -71,6 +67,29 @@ exports.fetchClientTaxations = async (req, res) => {
         },
       },
     ]);
+
+    if (searchKey) {
+      pipeline.push( 
+        {
+        $match: {
+          $or: [
+            { clientId :{ $regex: searchKey, $options: "i" } },
+            { clientEmail: { $regex: searchKey, $options: "i" } },
+            { clientName: { $regex: searchKey, $options: "i" } },
+            {
+              clientMobileNumber: {
+                $regex: searchKey,
+                $options: "i",
+              },
+            },
+            ...(role.preparer ? 
+              [   { status: { $regex: searchKey, $options: "i" } }]:[]
+              )
+           
+          ],
+        },
+      })
+    }
 
     // Execute the aggregation pipeline
     const result = await ClientYearlyTaxation.aggregate(pipeline);
@@ -119,7 +138,7 @@ exports.assignPreparer = async (req, res) => {
     }
 
     // Check if caller of client yearly taxation matches with callerId
-    if (clientYearlyTaxation.caller !== callerId) {
+    if (clientYearlyTaxation.caller.toString() !== callerId.toString()) {
       return res
         .status(403)
         .json(
@@ -271,6 +290,9 @@ exports.fetchClientTaxationById = async (req, res) => {
           paymentStatus: 1,
           "preparerDetails.name": 1,
           "clientDetails.premium": 1,
+          preparer:1,
+          reviewer:1,
+          finalDrafter:1
         },
       },
     ]);
@@ -297,5 +319,119 @@ exports.fetchClientTaxationById = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json(failedResponse(500, false, "Internal Server Error"));
+  }
+};
+
+
+exports.fetchClientDocuments = async (req, res) => {
+  try {
+  
+    // Extract query parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const searchKey = req.query.searchKey || "";
+    const status = req.query.status || "";
+    const pipeline = [];
+    if(status === "PENDING"){
+      pipeline.push({
+        $match:{
+          clientDocuments: { $size: 0 },
+        }
+      })
+    }
+  
+    pipeline.push(...[
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client",
+          foreignField: "_id",
+          as: "clientDetails",
+        },
+      },
+      {
+        $unwind: "$clientDetails",
+      },
+
+      {
+        $match: {
+          $or: [
+            { "clientDetails.id": { $regex: searchKey, $options: "i" } },
+            { "clientDetails.name": { $regex: searchKey, $options: "i" } },
+            {
+              "clientDetails.mobileNumber": {
+                $regex: searchKey,
+                $options: "i",
+              },
+            },
+            { "clientDetails.email": { $regex: searchKey, $options: "i" } },
+          ],
+        },
+      },
+      {
+        $facet: {
+          totalData: [{ $count: "count" }],
+          limitedData: [
+            { $skip: (page - 1) * limit },
+            { $limit: limit },
+            {
+              $project: {
+                clientId: "$clientDetails.id",
+                clientName: "$clientDetails.name",
+                clientMobileNumber: "$clientDetails.mobileNumber",
+                clientEmail: "$clientDetails.email",
+                clientCreatedAt: "$clientDetails.createdAt",
+                state: "$clientDetails.state",
+                zipCode: "$clientDetails.zipCode",
+
+            
+                taxYear: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    // Execute the aggregation pipeline
+    const result = await ClientYearlyTaxation.aggregate(pipeline);
+
+    const totalData = result[0].totalData[0] ? result[0].totalData[0].count : 0;
+    const limitedData = result[0].limitedData;
+
+    res
+      .status(200)
+      .json(
+        successResponse(200, true, "Data successfully fetched", {
+          totalData,
+          limitedData,
+        })
+      );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(failedResponse(500, false, "Internal Server Error"));
+  }
+};
+
+/**--------------------------------------fetch caller's assigned calls------------------------------ */
+exports.clientTaxStats = async (req, res) => {
+  try {
+    const {role,preparerId} = req.userRole;
+  
+
+    // Fetch total count of assigned calls
+    const assignedDocsCount = await ClientYearlyTaxation.countDocuments({preparer:preparerId});
+
+    // Fetch total count of pending calls
+    const pendingCallsCount = await ClientYearlyTaxation.countDocuments({ preparer:preparerId,status: 'PENDING' });
+
+    // Return the results
+    res.status(200).json(successResponse(200,true,"Successfully fetched stats",{
+      assignedDocsCount,
+      pendingCallsCount
+    }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(failedResponse(500,false,'Internal Server Error' ));
   }
 };

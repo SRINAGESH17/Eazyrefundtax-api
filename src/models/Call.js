@@ -21,7 +21,7 @@ const callSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique:true,
-      default: shortid.generate
+   
     },
     slotName: {
       type: String,
