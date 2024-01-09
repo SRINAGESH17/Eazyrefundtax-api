@@ -47,10 +47,10 @@ exports.uploadedDocument = async (req, res) => {
 
     if (taxReturnDocumentType) {
       documentModel = TaxReturnDocument;
-      clientYearlyTaxationField = "tax_return_documents";
+      clientYearlyTaxationField = "taxReturnDocuments";
     } else if (taxDocumentType) {
       documentModel = ClientDocument;
-      clientYearlyTaxationField = "client_documents";
+      clientYearlyTaxationField = "clientDocuments";
     }
 
     async function getUniqueNumber() {
@@ -90,10 +90,12 @@ exports.uploadedDocument = async (req, res) => {
 
     const uploadedDocument = await documentModel.create(documentData);
 
+
     // Update the respective field in clientYearlyTaxation
-    await ClientYearlyTaxation.findByIdAndUpdate(clientYearlyTaxId, {
+   const updatedClient= await ClientYearlyTaxation.findByIdAndUpdate(clientYearlyTaxId, {
       $push: { [clientYearlyTaxationField]: uploadedDocument._id },
     });
+    console.log(updatedClient,"dlld8888888888888888888888888888888888888888888888888888888888")
 
     res
       .status(201)

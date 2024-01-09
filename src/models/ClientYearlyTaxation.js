@@ -28,7 +28,7 @@ const documentSchema = new mongoose.Schema(
         ref: "client_documents",
       },
     ],
-    taxReturnDocument:[
+    taxReturnDocuments:[
         {
             type: mongoose.Schema.Types.ObjectId,
             ref: "tax_return_documents",

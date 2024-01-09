@@ -292,7 +292,9 @@ exports.fetchClientTaxationById = async (req, res) => {
           "clientDetails.premium": 1,
           preparer:1,
           reviewer:1,
-          finalDrafter:1
+          finalDrafter:1,
+          clientDocs:1,
+          taxDocs:1
         },
       },
     ]);
