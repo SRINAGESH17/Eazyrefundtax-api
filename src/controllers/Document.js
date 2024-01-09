@@ -139,7 +139,9 @@ exports.getCombinedDocuments = async (req, res) => {
         },
       },
     ];
+    console.log(searchKey, "search key 9");
     if (searchKey) {
+      
       taxReturnAggregation.push({
         $match: {
           $or: [
