@@ -51,7 +51,7 @@ exports.fetchClientTaxations = async (req, res) => {
         $facet: {
           totalData: [{ $count: "count" }],
           limitedData: [
-            { $skip: (page - 1) * pageSize },
+            { $skip: (page - 1) * limit },
             { $limit: limit },
             {
               $project: {

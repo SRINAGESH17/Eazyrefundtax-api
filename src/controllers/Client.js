@@ -225,9 +225,9 @@ exports.getActiveClientYearlyTaxations = async (req, res) => {
       aggregationPipeline.push(  {
         $match: {
           $or: [
-            { 'clientInfo.id': { $regex: searchKey, $options: 'i' } },
-            { 'clientInfo.email': { $regex: searchKey, $options: 'i' } },
-            { 'clientInfo.name': { $regex: searchKey, $options: 'i' } },
+            { 'clientId': { $regex: searchKey, $options: 'i' } },
+            { 'clientEmail': { $regex: searchKey, $options: 'i' } },
+            { 'clientName': { $regex: searchKey, $options: 'i' } },
           ],
         },
       },)
