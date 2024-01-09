@@ -120,7 +120,7 @@ const verifyCaller = (req, res, next) => {
       const caller = await Caller.findOne({employee:req.userRole.userMongoId})
       console.log(caller,"88888888")
       if (req?.userRole?.role?.employee && !_.isEmpty(caller)) {
-        req.userRole.role.push({caller:true});
+        req.userRole.role.caller = true;
         req.userRole.callerId = caller._id
         next();
       } else {

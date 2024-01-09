@@ -11,6 +11,8 @@ exports.uploadedDocument = async (req, res) => {
   try {
     const clientYearlyTaxId = req.params.clientYearlyTaxId;
     const fileType = req.body.fileType;
+
+    console.log(req.body);
     console.log(clientYearlyTaxId);
 
     // Check if the caller has the necessary permissions
