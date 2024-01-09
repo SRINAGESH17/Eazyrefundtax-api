@@ -121,7 +121,7 @@ const ClientSuccessRegister = async (to, pass, name) => {
   });
 };
 const ClientTaxEmail = async (to, name, subject, content, attachments) => {
-  console.log(to, pass, name, "---------");
+
 
   const receivers = [
     {
@@ -145,7 +145,7 @@ const ClientTaxEmail = async (to, name, subject, content, attachments) => {
         <p>Best regards,<br/>
         EazyRefundTax Team</p>
       </div>`,
-    attachment,
+    attachment:attachments,
   });
 };
 
