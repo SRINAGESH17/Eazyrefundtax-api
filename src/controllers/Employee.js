@@ -43,7 +43,7 @@ const updateEmployeeSchema = yup.object().shape({
     .string()
     .email("Invalid email format")
     .required("Email is required"),
-  designation: yup.string().required("Designation is required"),
+ 
   identityType: yup.string(),
   identityNumber: yup.string(),
 });
@@ -306,13 +306,12 @@ exports.fetchEmployees = async (req, res) => {
 
 exports.fetchEmployeeById = async (req, res) => {
   try {
-    const {role,userMongoId}= req.userRole;
+    const { role, userMongoId } = req.userRole;
     let employeeId;
     if (role.employee) {
-      employeeId=userMongoId;
+      employeeId = userMongoId;
     } else {
-       employeeId = req.params.id;
-      
+      employeeId = req.params.id;
     }
 
     if (!employeeId) {
@@ -368,6 +367,8 @@ exports.fetchEmployeeById = async (req, res) => {
 exports.updateEmployee = async (req, res) => {
   try {
     const {role,userMongoId}=req.userRole;
+
+    console.log(req.body, req.files, "employee updatation details received");
     let id;
     if (role.employee) {
       id= userMongoId;
@@ -394,6 +395,8 @@ exports.updateEmployee = async (req, res) => {
       }
     }
 
+    console.log(req.body, req.files, "employee  details received");
+
     // Validate request data using Yup schema
     // Update the schema as needed for the update operation
     // Assuming you have an updateEmployeeSchema for validation
@@ -410,8 +413,9 @@ exports.updateEmployee = async (req, res) => {
       state,
       zipCode,
     } = req.body;
+    console.log(name,mobileNumber, " details received");
 
-    console.log(req.body, req.files, "employee updatation details received");
+    
 
     // Find the employee by ID
     const employee = await Employee.findById(id).populate("userRole").exec();
@@ -503,6 +507,8 @@ exports.updateEmployee = async (req, res) => {
       url: _IDURL || employee.identity.url, // Assuming you want to keep the existing URL
     };
 
+    
+
     if (photo) {
       console.log(photo, "photo received");
     }
@@ -517,6 +523,7 @@ exports.updateEmployee = async (req, res) => {
       .status(201)
       .json(successResponse(201, true, "Employee updated successfully"));
   } catch (error) {
+    console.log(error)
     // Handle Yup validation errors
     if (error.name === "ValidationError") {
       const validationErrors = error.errors.reduce((acc, curr) => {
