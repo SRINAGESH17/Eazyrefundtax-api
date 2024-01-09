@@ -77,8 +77,11 @@ const getUserRole = async (req, res, next) => {
         .status(400)
         .json(failedResponse(400, false, "Role not found."));
     }
+// Convert Mongoose document to a plain JavaScript object
+const roleObject = Role.toObject();
+console.log(roleObject,"idiieiieiieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
 
-    req.userRole = Role;
+    req.userRole = roleObject;
 
     next();
   } catch (error) {

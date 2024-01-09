@@ -63,3 +63,17 @@ exports.addTaxDocument = async (req, res) => {
         .json(failedResponse(500, false, 'Internal Server Error', error));
     }
   };
+  exports.getActiveTaxDocuments = async (req, res) => {
+    try {
+      
+      const taxDocs = await TaxDocumentTypes.find().select("name")
+  
+      return res.status(200).json(successResponse(200,true,taxDocs)
+      );
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json(failedResponse(500, false, 'Internal Server Error', error));
+    }
+  };

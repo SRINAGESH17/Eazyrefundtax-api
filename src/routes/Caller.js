@@ -6,6 +6,7 @@ const multer = require("multer");
 const { fetchClientTaxations, assignPreparer, fetchClientTaxationById } = require("../controllers/ClientYearlyTaxation");
 const { uploadedDocument, getCombinedDocuments } = require("../controllers/Document");
 const upload = require("../middlewares/upload");
+const { getActiveTaxDocuments } = require("../controllers/TaxDocument");
 const route = express.Router();
 
 
@@ -25,6 +26,10 @@ route.put('/client-yearly-taxations/:clientYearlyTaxationId/assign-preparer',ver
 /**-------------------------------------Documents-------------------------------------- */
 route.post('/document/upload/:clientYearlyTaxId',verifyCaller,upload.single('doc'),uploadedDocument);
 route.get('/document/fetch',verifyCaller,getCombinedDocuments);
+
+/**-----------------------------------------tax document types---------------------------- */
+route.get('/tax-doc-type/active',verifyCaller,getActiveTaxDocuments);
+
 
 
 
